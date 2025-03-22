@@ -249,7 +249,7 @@ class GraphingApp(QMainWindow):
         left_layout.addStretch()
         
         # Credits at bottom
-        credits = QLabel("Created by Group 5 - Calculus Visualization Project")
+        credits = QLabel("Created by _Nu1L - Calculus Visualization Project")
         credits.setAlignment(Qt.AlignmentFlag.AlignCenter)
         credits.setStyleSheet("color: #888; font-style: italic;")
         left_layout.addWidget(credits)
@@ -554,7 +554,6 @@ class GraphingApp(QMainWindow):
             self.combined_canvas.axes.legend()
         self.combined_canvas.draw()
         
-        # Switch to appropriate tab
         self.tab_widget.setCurrentIndex(1)
     
     def clear_plots(self):
@@ -568,21 +567,15 @@ class GraphingApp(QMainWindow):
     
     def save_plots(self):
         """Save all plots as images"""
-        # This is a placeholder - in a real app, you'd use file dialogs
+
         try:
             self.canvas1.fig.savefig("function1.png")
             self.canvas2.fig.savefig("function2.png")
             self.canvas3.fig.savefig("function3.png")
             self.combined_canvas.fig.savefig("combined_view.png")
             self.analysis_canvas.fig.savefig("analysis_view.png")
-            # You would normally show a success message here
+
             print("Plots saved successfully!")
         except Exception as e:
             print(f"Error saving plots: {e}")
 
-# This would be in main.py
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = GraphingApp()
-    window.showMaximized()
-    sys.exit(app.exec())
