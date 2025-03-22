@@ -93,4 +93,5 @@ The application uses:
 This project is for educational purposes and is open for further improvements.
 
 ## Contributors
-Add your name and contact information here.
+- _Nu1L
+  - Main Developer
