@@ -20,15 +20,29 @@ This project is a Python-based application designed to visualize mathematical fu
 ### Requirements
 - Python 3.6+
 - Required packages:
-  - numpy
-  - matplotlib
-  - sympy
+  - contourpy==1.3.1
+  - cycler==0.12.1
+  - fonttools==4.56.0
+  - kiwisolver==1.4.8
+  - matplotlib==3.10.1
+  - mpmath==1.3.0
+  - numpy==2.2.4
+  - packaging==24.2
+  - pillow==11.1.0
+  - pyparsing==3.2.1
+  - PyQt6==6.8.1
+  - PyQt6-Qt6==6.8.2
+  - PyQt6_sip==13.10.0
+  - python-dateutil==2.9.0.post0
+  - scipy==1.15.2
+  - six==1.17.0
+  - sympy==1.13.3
 
 ### Installation
 1. Clone or download this repository to your local machine
 2. Install the required dependencies:
 ```
-pip install numpy matplotlib sympy
+pip install -r requirements.txt
 ```
 
 ### Running the Application
