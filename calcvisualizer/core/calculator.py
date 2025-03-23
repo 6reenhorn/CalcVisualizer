@@ -104,3 +104,5 @@ def find_critical_points(func, x_range, derivative_values=None):
             x = x_range[i]
             y = func(x)
             critical_points.append((x, y))
+    
+    return critical_points

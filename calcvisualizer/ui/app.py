@@ -3,20 +3,14 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                             QSlider, QSpinBox, QTabWidget, QSplitter, QFrame, QCheckBox)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QColor, QPalette, QIcon
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 import sys
 import numpy as np
-from sympy import symbols, diff, integrate, lambdify, sympify, sin, cos, exp, log, tan, sqrt, pi
 
-class MplCanvas(FigureCanvas):
-    def __init__(self, width=5, height=4, dpi=100):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.fig.set_facecolor("#f0f0f0")
-        self.axes = self.fig.add_subplot(111)
-        super(MplCanvas, self).__init__(self.fig)
-        self.setMinimumSize(400, 300)
+from calcvisualizer.ui.canvas import MplCanvas
+from calcvisualizer.core.calculator import (
+    parse_function, calculate_derivative, calculate_integral, find_critical_points
+)
+from sympy import symbols, sympify, lambdify, sin, cos, exp, log, tan, sqrt, pi, diff, integrate
 
 class GraphingApp(QMainWindow):
     def __init__(self):
@@ -578,4 +572,3 @@ class GraphingApp(QMainWindow):
             print("Plots saved successfully!")
         except Exception as e:
             print(f"Error saving plots: {e}")
-
