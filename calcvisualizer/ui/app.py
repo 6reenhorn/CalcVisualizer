@@ -565,6 +565,8 @@ class GraphingApp(QMainWindow):
         
         # Create a custom dialog for save options
         dialog = QDialog(self)
+        dialog.setMinimumSize(250, 270)
+        dialog.setMaximumSize(300, 300) 
         dialog.setWindowTitle("Save Plot Options")
         layout = QVBoxLayout(dialog)
         
