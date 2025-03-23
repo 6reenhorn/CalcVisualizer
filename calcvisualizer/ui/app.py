@@ -560,15 +560,95 @@ class GraphingApp(QMainWindow):
             canvas.draw()
     
     def save_plots(self):
-        """Save all plots as images"""
-
+        """Save plots with customizable options"""
+        from PyQt6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QCheckBox, QComboBox, QLabel, QDialogButtonBox
+        
+        # Create a custom dialog for save options
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Save Plot Options")
+        layout = QVBoxLayout(dialog)
+        
+        # Plot selection checkboxes
+        layout.addWidget(QLabel("Select plots to save:"))
+        cb_function1 = QCheckBox("Function 1")
+        cb_function2 = QCheckBox("Function 2")
+        cb_function3 = QCheckBox("Function 3")
+        cb_combined = QCheckBox("Combined View")
+        cb_analysis = QCheckBox("Analysis View")
+        
+        # Check all by default
+        for cb in [cb_function1, cb_function2, cb_function3, cb_combined, cb_analysis]:
+            cb.setChecked(True)
+            layout.addWidget(cb)
+        
+        # File format selection
+        layout.addWidget(QLabel("File format:"))
+        format_combo = QComboBox()
+        format_combo.addItems(["PNG", "JPG", "SVG", "PDF"])
+        layout.addWidget(format_combo)
+        
+        # Dialog buttons
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        
+        # Show dialog and get result
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        
+        # Get selected file format
+        file_format = format_combo.currentText().lower()
+        
+        # Ask user to select a directory
+        save_dir = QFileDialog.getExistingDirectory(
+            self, 
+            "Select Directory to Save Plots",
+            "",
+            QFileDialog.Option.ShowDirsOnly
+        )
+        
+        if not save_dir:
+            return
+        
         try:
-            self.canvas1.fig.savefig("function1.png")
-            self.canvas2.fig.savefig("function2.png")
-            self.canvas3.fig.savefig("function3.png")
-            self.combined_canvas.fig.savefig("combined_view.png")
-            self.analysis_canvas.fig.savefig("analysis_view.png")
-
-            print("Plots saved successfully!")
+            import os
+            saved_files = []
+            
+            # Save selected plots
+            if cb_function1.isChecked():
+                filename = os.path.join(save_dir, f"function1.{file_format}")
+                self.canvas1.fig.savefig(filename)
+                saved_files.append(filename)
+                
+            if cb_function2.isChecked():
+                filename = os.path.join(save_dir, f"function2.{file_format}")
+                self.canvas2.fig.savefig(filename)
+                saved_files.append(filename)
+                
+            if cb_function3.isChecked():
+                filename = os.path.join(save_dir, f"function3.{file_format}")
+                self.canvas3.fig.savefig(filename)
+                saved_files.append(filename)
+                
+            if cb_combined.isChecked():
+                filename = os.path.join(save_dir, f"combined_view.{file_format}")
+                self.combined_canvas.fig.savefig(filename)
+                saved_files.append(filename)
+                
+            if cb_analysis.isChecked():
+                filename = os.path.join(save_dir, f"analysis_view.{file_format}")
+                self.analysis_canvas.fig.savefig(filename)
+                saved_files.append(filename)
+            
+            # Show success message
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self, 
+                "Success", 
+                f"Saved {len(saved_files)} plot(s) to:\n{save_dir}"
+            )
+            
         except Exception as e:
-            print(f"Error saving plots: {e}")
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Error", f"Error saving plots: {e}")
