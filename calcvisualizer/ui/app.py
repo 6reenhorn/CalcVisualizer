@@ -364,9 +364,9 @@ class GraphingApp(QMainWindow):
         individual_layout = QGridLayout(self.individual_tab)
         
         # Create individual canvases
-        self.canvas1 = MplCanvas(width=6, height=4, dpi=100)
-        self.canvas2 = MplCanvas(width=6, height=4, dpi=100)
-        self.canvas3 = MplCanvas(width=6, height=4, dpi=100)
+        self.canvas1 = MplCanvas(width=6, height=6, dpi=100)
+        self.canvas2 = MplCanvas(width=6, height=6, dpi=100)
+        self.canvas3 = MplCanvas(width=6, height=6, dpi=100)
         
         individual_layout.addWidget(self.canvas1, 0, 0)
         individual_layout.addWidget(self.canvas2, 0, 1)
@@ -375,13 +375,13 @@ class GraphingApp(QMainWindow):
         # Combined tab
         self.combined_tab = QWidget()
         combined_layout = QVBoxLayout(self.combined_tab)
-        self.combined_canvas = MplCanvas(width=10, height=12, dpi=100)
+        self.combined_canvas = MplCanvas(width=9, height=12, dpi=100)
         combined_layout.addWidget(self.combined_canvas)
         
         # Analysis tab
         self.analysis_tab = QWidget()
         analysis_layout = QVBoxLayout(self.analysis_tab)
-        self.analysis_canvas = MplCanvas(width=10, height=12, dpi=100)
+        self.analysis_canvas = MplCanvas(width=9, height=12, dpi=100)
         analysis_layout.addWidget(self.analysis_canvas)
         
         # Add tabs to widget in the new order
@@ -455,7 +455,7 @@ class GraphingApp(QMainWindow):
             container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             
             # Create canvas
-            canvas = MplCanvas(width=4, height=3, dpi=100)
+            canvas = MplCanvas(width=5, height=3, dpi=100)
             self.function_canvases.append(canvas)
             container_layout.addWidget(canvas)
             
@@ -687,7 +687,6 @@ class GraphingApp(QMainWindow):
                         
                         current_canvas.axes.set_xlabel('x')
                         current_canvas.axes.set_ylabel('y')
-                        current_canvas.axes.set_title(f"Function: {expr}")
                         
                         if self.legend.isChecked():
                             current_canvas.axes.legend(loc='upper left', fontsize='small')
@@ -982,61 +981,100 @@ class GraphingApp(QMainWindow):
             canvas.draw()
     
     def save_plots(self):
-        """Save all plots to a directory"""
+        """Save plots with customizable options"""
+        from PyQt6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QCheckBox, QComboBox, QLabel, QDialogButtonBox
+        
+        # Create a custom dialog for save options
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Save Plot Options")
+
+        dialog.setMinimumSize(270, 290)
+        dialog.setMaximumSize(300, 300)
+
+        layout = QVBoxLayout(dialog)
+        
+        # Plot selection checkboxes
+        layout.addWidget(QLabel("Select plots to save:"))
+        cb_function1 = QCheckBox("Function 1")
+        cb_function2 = QCheckBox("Function 2")
+        cb_function3 = QCheckBox("Function 3")
+        cb_combined = QCheckBox("Combined View")
+        cb_analysis = QCheckBox("Analysis View")
+        
+        # Check all by default
+        for cb in [cb_function1, cb_function2, cb_function3, cb_combined, cb_analysis]:
+            cb.setChecked(True)
+            layout.addWidget(cb)
+        
+        # File format selection
+        layout.addWidget(QLabel("File format:"))
+        format_combo = QComboBox()
+        format_combo.addItems(["PNG", "JPG", "SVG", "PDF"])
+        layout.addWidget(format_combo)
+        
+        # Dialog buttons
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        
+        # Show dialog and get result
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        
+        # Get selected file format
+        file_format = format_combo.currentText().lower()
+        
+        # Ask user to select a directory
+        save_dir = QFileDialog.getExistingDirectory(
+            self, 
+            "Select Directory to Save Plots",
+            "",
+            QFileDialog.Option.ShowDirsOnly
+        )
+        
+        if not save_dir:
+            return
+        
         try:
-            # Get directory to save to
-            save_dir = QFileDialog.getExistingDirectory(self, "Select Directory to Save Plots")
+            import os
+            saved_files = []
             
-            if not save_dir:
-                return
-            
-            # Get timestamp for filenames
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            
-            # Save all canvases
-            count = 0
-            for i, canvas in enumerate([self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
-                                      self.analysis_canvas]):
-                # Skip empty plots
-                if len(canvas.axes.lines) == 0 and len(canvas.axes.collections) == 0:
-                    continue
+            # Save selected plots
+            if cb_function1.isChecked():
+                filename = os.path.join(save_dir, f"function1.{file_format}")
+                self.canvas1.fig.savefig(filename)
+                saved_files.append(filename)
                 
-                # Create filename
-                if i == 0:
-                    filename = f"function1_{timestamp}.png"
-                elif i == 1:
-                    filename = f"function2_{timestamp}.png"
-                elif i == 2:
-                    filename = f"function3_{timestamp}.png"
-                elif i == 3:
-                    filename = f"combined_{timestamp}.png"
-                else:
-                    filename = f"analysis_{timestamp}.png"
+            if cb_function2.isChecked():
+                filename = os.path.join(save_dir, f"function2.{file_format}")
+                self.canvas2.fig.savefig(filename)
+                saved_files.append(filename)
                 
-                # Save the figure
-                full_path = os.path.join(save_dir, filename)
-                canvas.figure.savefig(full_path, dpi=300, bbox_inches='tight')
-                count += 1
-            
-            # Also save any dynamic function canvases
-            for i, canvas in enumerate(self.function_canvases):
-                # Skip empty plots
-                if len(canvas.axes.lines) == 0 and len(canvas.axes.collections) == 0:
-                    continue
+            if cb_function3.isChecked():
+                filename = os.path.join(save_dir, f"function3.{file_format}")
+                self.canvas3.fig.savefig(filename)
+                saved_files.append(filename)
                 
-                filename = f"dynamic_function{i+1}_{timestamp}.png"
-                full_path = os.path.join(save_dir, filename)
-                canvas.figure.savefig(full_path, dpi=300, bbox_inches='tight')
-                count += 1
+            if cb_combined.isChecked():
+                filename = os.path.join(save_dir, f"combined_view.{file_format}")
+                self.combined_canvas.fig.savefig(filename)
+                saved_files.append(filename)
+                
+            if cb_analysis.isChecked():
+                filename = os.path.join(save_dir, f"analysis_view.{file_format}")
+                self.analysis_canvas.fig.savefig(filename)
+                saved_files.append(filename)
             
             # Show success message
-            if count > 0:
-                QMessageBox.information(self, "Save Successful", 
-                                     f"Successfully saved {count} plots to:\n{save_dir}")
-            else:
-                QMessageBox.warning(self, "No Plots Saved", 
-                                 "There were no plots to save. Please generate some plots first.")
-        
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self, 
+                "Success", 
+                f"Saved {len(saved_files)} plot(s) to:\n{save_dir}"
+            )
+            
         except Exception as e:
-            QMessageBox.critical(self, "Error Saving Plots", f"An error occurred while saving plots: {e}")
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Error", f"Error saving plots: {e}")
 
