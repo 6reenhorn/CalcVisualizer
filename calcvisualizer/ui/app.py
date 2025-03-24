@@ -1094,6 +1094,18 @@ class GraphingApp(QMainWindow):
                 spine.set_linewidth(2)
             if self.grid_lines.isChecked():
                 ax.grid(True, linestyle='-', alpha=0.5, color='#ffffff')
+        
+        else:  # Default theme
+            ax.set_facecolor('white')
+            ax.tick_params(colors='black')
+            ax.xaxis.label.set_color('black')
+            ax.yaxis.label.set_color('black')
+            ax.title.set_color('black')
+            for spine in ax.spines.values():
+                spine.set_color('black')
+                spine.set_linewidth(1)
+            if self.grid_lines.isChecked():
+                ax.grid(True, linestyle='--', alpha=0.7, color='#cccccc')
     
     def clear_plots(self):
         """Clear all plots and reset to default state"""
