@@ -937,7 +937,6 @@ class GraphingApp(QMainWindow):
                         
                         current_canvas.axes.plot(x_range, y_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"f(x) = {expr}")
-                        current_canvas.axes.set_title(f"Function: {expr}")
                     
                     elif plot_type == "derivatives":
                         derivative_expr = diff(parsed_expr, x)
@@ -952,7 +951,6 @@ class GraphingApp(QMainWindow):
                         
                         current_canvas.axes.plot(x_range, d_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"f'(x) = {derivative_expr}")
-                        current_canvas.axes.set_title(f"Derivative: {derivative_expr}")
                         
                         # Plot critical points
                         critical_points = []
@@ -989,7 +987,6 @@ class GraphingApp(QMainWindow):
                         
                         current_canvas.axes.plot(x_range, int_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"∫f(x)dx = {integral_expr} + C")
-                        current_canvas.axes.set_title(f"Integral: {integral_expr} + C")
                     
                     # Set axis labels and apply settings
                     current_canvas.axes.set_xlabel('x')
