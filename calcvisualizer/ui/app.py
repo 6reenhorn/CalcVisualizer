@@ -322,12 +322,14 @@ class GraphingApp(QMainWindow):
         self.entire_top_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.entire_top_scrollarea.setStyleSheet("""
             QScrollBar:horizontal {
-                height: 12px;
+                height: 15px;
                 background: #2e2e2e;
                 border-radius: 6px;
+                margin-left: 5px;
+                margin-right: 5px; 
             }
             QScrollBar::handle:horizontal {
-                background: #3a86ff;
+                background: #2e2e2e;
                 min-width: 20px;
                 border-radius: 6px;
             }
@@ -347,7 +349,7 @@ class GraphingApp(QMainWindow):
         entire_top.setStyleSheet("""
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
-            background-color: #2e2e2e;
+            background-color: #4e4e4e;
             margin-bottom: 10px;
         """)
         
