@@ -7,7 +7,7 @@ from sympy.utilities.lambdify import lambdify
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                            QGroupBox, QLabel, QLineEdit, QPushButton, QGridLayout, QSlider, 
                            QSpinBox, QComboBox, QCheckBox, QSplitter, QScrollArea, QFrame,
-                           QTabWidget, QFileDialog, QMessageBox, QDoubleSpinBox)
+                           QTabWidget, QFileDialog, QMessageBox, QDoubleSpinBox, QSizePolicy,)
 from PyQt6.QtCore import Qt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -319,9 +319,27 @@ class GraphingApp(QMainWindow):
         self.function_canvases = []
         self.entire_top_scrollarea = QScrollArea()
         self.entire_top_scrollarea.setWidgetResizable(True)
+        self.entire_top_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.entire_top_scrollarea.setStyleSheet("""
+            QScrollBar:horizontal {
+                height: 12px;
+                background: #2e2e2e;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:horizontal {
+                background: #3a86ff;
+                min-width: 20px;
+                border-radius: 6px;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                width: 0px;
+            }
+        """)
+
         self.entire_top_scrollcontent = QWidget()
         self.entire_top_scrolllayout = QHBoxLayout(self.entire_top_scrollcontent)
-        self.entire_top_scrolllayout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the layout contents
+        self.entire_top_scrolllayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.entire_top_scrolllayout.setSpacing(10)
         self.entire_top_scrollarea.setWidget(self.entire_top_scrollcontent)
         entire_top_layout.addWidget(self.entire_top_scrollarea)
         entire_layout.addWidget(entire_top, stretch=1)  
@@ -470,30 +488,66 @@ class GraphingApp(QMainWindow):
         # Create a canvas for each function
         for i, expr in enumerate(expressions):
             container = QWidget()
+            container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(10, 10, 10, 10)  # Add some padding
-            container_layout.setSpacing(10)  # Space between canvas and label
+            container_layout.setContentsMargins(10, 10, 10, 10)
+            container_layout.setSpacing(10)
             
-            # Create canvas
+            # Create frame for the canvas
+            canvas_frame = QFrame()
+            canvas_frame.setMinimumSize(200, 150)  # Minimum size
+            canvas_frame.setMaximumSize(400, 300)  # Maximum size
+            canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas_frame_layout = QVBoxLayout(canvas_frame)
+            canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Create canvas with responsive size
             canvas = MplCanvas(width=5, height=3.5, dpi=100)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas_frame_layout.addWidget(canvas)
             self.function_canvases.append(canvas)
-            container_layout.addWidget(canvas)
             
-            # Add label
+            # Add canvas frame to container
+            container_layout.addWidget(canvas_frame)
+            
+            # Add label with word wrap
             label = QLabel(f"Function {i+1}: {expr}")
             label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            label.setStyleSheet("font-weight: bold; margin-top: 15px;")
+            label.setStyleSheet("""
+                font-weight: bold; 
+                margin-top: 15px;
+                padding: 5px;
+                background-color: rgba(58, 134, 255, 0.1);
+                border-radius: 4px;
+            """)
             label.setWordWrap(True)
+            label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
             container_layout.addWidget(label)
             
+            # Create a frame for the container
+            frame = QFrame()
+            frame.setObjectName(f"function_frame_{i}")
+            frame.setStyleSheet("""
+                QFrame {
+                    background-color: #3e3e3e;
+                    border-radius: 8px;
+                    border: 1px solid #555;
+                }
+            """)
+            frame.setLayout(container_layout)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            
             # Add to layout
-            self.entire_top_scrolllayout.addWidget(container)
+            self.entire_top_scrolllayout.addWidget(frame)
 
         # Add right spacer for centering
         self.entire_top_scrolllayout.addStretch(1)
         
         # Update function visibility checkboxes
         self.update_function_visibility_checkboxes(expressions)
+
+        # Force layout update
+        self.entire_top_scrollcontent.adjustSize()
     
     def update_function_visibility_checkboxes(self, expressions):
         """Update the function visibility checkboxes based on the current functions"""
@@ -732,7 +786,6 @@ class GraphingApp(QMainWindow):
             # Set axis limits for combined view
             current_canvas.axes.set_xlabel('x')
             current_canvas.axes.set_ylabel('y')
-            current_canvas.axes.set_title("Combined Functions")
             
             if self.legend.isChecked():
                 current_canvas.axes.legend(loc='upper left', fontsize='small')
@@ -765,7 +818,6 @@ class GraphingApp(QMainWindow):
             
             current_canvas.axes.set_xlabel('x')
             current_canvas.axes.set_ylabel('y')
-            current_canvas.axes.set_title("Derivatives and Critical Points")
             
             if self.legend.isChecked():
                 current_canvas.axes.legend(loc='upper left', fontsize='small')
