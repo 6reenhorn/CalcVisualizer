@@ -321,9 +321,17 @@ class GraphingApp(QMainWindow):
         self.entire_top_scrollarea.setWidgetResizable(True)
         self.entire_top_scrollcontent = QWidget()
         self.entire_top_scrolllayout = QHBoxLayout(self.entire_top_scrollcontent)
+        self.entire_top_scrolllayout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the layout contents
         self.entire_top_scrollarea.setWidget(self.entire_top_scrollcontent)
         entire_top_layout.addWidget(self.entire_top_scrollarea)
-        entire_layout.addWidget(entire_top, stretch=1)  # 2:1 ratio for top:bottom
+        entire_layout.addWidget(entire_top, stretch=1)  
+
+        entire_top.setStyleSheet("""
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            background-color: #2e2e2e;
+            margin-bottom: 10px;
+        """)
         
         # Bottom section for combined and analysis views
         entire_bottom = QWidget()
@@ -343,7 +351,11 @@ class GraphingApp(QMainWindow):
         combined_label.setStyleSheet("font-weight: bold;")
         entire_bottom_left_layout.addWidget(combined_label)
 
-        
+        entire_bottom_left.setStyleSheet("""
+            border-radius: 8px;
+            background-color: #2e2e2e;
+        """)
+
         # Bottom right: Analysis view
         entire_bottom_right = QWidget()
         entire_bottom_right_layout = QVBoxLayout(entire_bottom_right)
@@ -354,6 +366,11 @@ class GraphingApp(QMainWindow):
         analysis_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         analysis_label.setStyleSheet("font-weight: bold;")
         entire_bottom_right_layout.addWidget(analysis_label)
+
+        entire_bottom_right.setStyleSheet("""
+            border-radius: 8px;
+            background-color: #2e2e2e;
+        """)
         
         entire_bottom_layout.addWidget(entire_bottom_left)
         entire_bottom_layout.addWidget(entire_bottom_right)
@@ -446,29 +463,34 @@ class GraphingApp(QMainWindow):
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
-        
+
+        # Add left spacer for centering
+        self.entire_top_scrolllayout.addStretch(1)
+
         # Create a canvas for each function
         for i, expr in enumerate(expressions):
             container = QWidget()
             container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            container_layout.setContentsMargins(10, 10, 10, 10)  # Add some padding
+            container_layout.setSpacing(10)  # Space between canvas and label
             
             # Create canvas
-            canvas = MplCanvas(width=5, height=3, dpi=100)
+            canvas = MplCanvas(width=5, height=3.5, dpi=100)
             self.function_canvases.append(canvas)
             container_layout.addWidget(canvas)
             
             # Add label
             label = QLabel(f"Function {i+1}: {expr}")
             label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            label.setMargin(15)
-            label.setStyleSheet("font-weight: bold;")
+            label.setStyleSheet("font-weight: bold; margin-top: 15px;")
             label.setWordWrap(True)
             container_layout.addWidget(label)
             
             # Add to layout
             self.entire_top_scrolllayout.addWidget(container)
+
+        # Add right spacer for centering
+        self.entire_top_scrolllayout.addStretch(1)
         
         # Update function visibility checkboxes
         self.update_function_visibility_checkboxes(expressions)
