@@ -8,3 +8,4 @@ class MplCanvas(FigureCanvas):
         self.axes = self.fig.add_subplot(111)
         super(MplCanvas, self).__init__(self.fig)
         self.setMinimumSize(400, 300)
+        self.fig.tight_layout()
