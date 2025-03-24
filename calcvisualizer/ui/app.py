@@ -492,13 +492,13 @@ class GraphingApp(QMainWindow):
             container = QWidget()
             container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(10, 10, 10, 10)
+            container_layout.setContentsMargins(10, 20, 10, 20)
             container_layout.setSpacing(10)
             
             # Create frame for the canvas
             canvas_frame = QFrame()
-            canvas_frame.setMinimumSize(200, 150)  # Minimum size
-            canvas_frame.setMaximumSize(400, 300)  # Maximum size
+            canvas_frame.setMinimumSize(200, 150)  
+            canvas_frame.setMaximumSize(420, 300)  
             canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas_frame_layout = QVBoxLayout(canvas_frame)
             canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
