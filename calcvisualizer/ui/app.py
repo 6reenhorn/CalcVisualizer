@@ -1,16 +1,16 @@
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QLabel, QLineEdit, QPushButton, QGroupBox, QGridLayout, QComboBox,
-                            QSlider, QSpinBox, QTabWidget, QSplitter, QFrame, QCheckBox)
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QColor, QPalette, QIcon
 import sys
+import os
 import numpy as np
-
-from calcvisualizer.ui.canvas import MplCanvas
-from calcvisualizer.core.calculator import (
-    parse_function, calculate_derivative, calculate_integral, find_critical_points
-)
-from sympy import symbols, sympify, lambdify, sin, cos, exp, log, tan, sqrt, pi, diff, integrate
+from datetime import datetime
+from sympy import symbols, sympify, diff, integrate, sin, cos, tan, exp, log, sqrt, pi
+from sympy.utilities.lambdify import lambdify
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+                           QGroupBox, QLabel, QLineEdit, QPushButton, QGridLayout, QSlider, 
+                           QSpinBox, QComboBox, QCheckBox, QSplitter, QScrollArea, QFrame,
+                           QTabWidget, QFileDialog, QMessageBox)
+from PyQt6.QtCore import Qt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
 class GraphingApp(QMainWindow):
     def __init__(self):
@@ -260,6 +260,56 @@ class GraphingApp(QMainWindow):
         # Create tab widget for different graph views
         self.tab_widget = QTabWidget()
         
+        # New Entire View tab
+        self.entire_tab = QWidget()
+        entire_layout = QVBoxLayout(self.entire_tab)
+
+        # Top section for individual function plots
+        entire_top = QWidget()
+        entire_top_layout = QHBoxLayout(entire_top)
+        entire_top_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Will dynamically create/populate these in plot_all_graphs
+        self.function_canvases = []
+        self.entire_top_scrollarea = QScrollArea()
+        self.entire_top_scrollarea.setWidgetResizable(True)
+        self.entire_top_scrollcontent = QWidget()
+        self.entire_top_scrolllayout = QHBoxLayout(self.entire_top_scrollcontent)
+        self.entire_top_scrollarea.setWidget(self.entire_top_scrollcontent)
+        entire_top_layout.addWidget(self.entire_top_scrollarea)
+        entire_layout.addWidget(entire_top, 2)  # 2:1 ratio for top:bottom
+        
+        # Bottom section for combined and analysis views
+        entire_bottom = QWidget()
+        entire_bottom_layout = QHBoxLayout(entire_bottom)
+        entire_bottom_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Bottom left: Combined view
+        entire_bottom_left = QWidget()
+        entire_bottom_left_layout = QVBoxLayout(entire_bottom_left)
+        entire_bottom_left_layout.setContentsMargins(0, 0, 0, 0)
+        self.combined_small_canvas = MplCanvas(width=5, height=4, dpi=100)
+        entire_bottom_left_layout.addWidget(self.combined_small_canvas)
+        combined_label = QLabel("Combined View")
+        combined_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        combined_label.setStyleSheet("font-weight: bold;")
+        entire_bottom_left_layout.addWidget(combined_label)
+        
+        # Bottom right: Analysis view
+        entire_bottom_right = QWidget()
+        entire_bottom_right_layout = QVBoxLayout(entire_bottom_right)
+        entire_bottom_right_layout.setContentsMargins(0, 0, 0, 0)
+        self.analysis_small_canvas = MplCanvas(width=5, height=4, dpi=100)
+        entire_bottom_right_layout.addWidget(self.analysis_small_canvas)
+        analysis_label = QLabel("Analysis View")
+        analysis_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        analysis_label.setStyleSheet("font-weight: bold;")
+        entire_bottom_right_layout.addWidget(analysis_label)
+        
+        entire_bottom_layout.addWidget(entire_bottom_left)
+        entire_bottom_layout.addWidget(entire_bottom_right)
+        entire_layout.addWidget(entire_bottom, 1)  # 2:1 ratio for top:bottom
+        
         # Individual function tabs
         self.individual_tab = QWidget()
         individual_layout = QGridLayout(self.individual_tab)
@@ -285,7 +335,8 @@ class GraphingApp(QMainWindow):
         self.analysis_canvas = MplCanvas(width=10, height=8, dpi=100)
         analysis_layout.addWidget(self.analysis_canvas)
         
-        # Add tabs to widget
+        # Add tabs to widget in the new order
+        self.tab_widget.addTab(self.entire_tab, "Entire View")
         self.tab_widget.addTab(self.individual_tab, "Individual Functions")
         self.tab_widget.addTab(self.combined_tab, "Combined View")
         self.tab_widget.addTab(self.analysis_tab, "Analysis View")
@@ -317,12 +368,45 @@ class GraphingApp(QMainWindow):
     
     def initialize_plots(self):
         """Initialize empty plots with grids and labels"""
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, self.analysis_canvas]:
+        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
+                      self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(True, linestyle='--', alpha=0.7)
             canvas.axes.set_xlabel('x')
             canvas.axes.set_ylabel('y')
             canvas.draw()
+    
+    def create_dynamic_canvases(self, expressions):
+        """Create canvases dynamically based on the number of functions"""
+        # Clear any existing content
+        self.function_canvases = []
+        
+        # Clear layout
+        while self.entire_top_scrolllayout.count():
+            item = self.entire_top_scrolllayout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        
+        # Create a canvas for each function
+        for i, expr in enumerate(expressions):
+            container = QWidget()
+            container_layout = QVBoxLayout(container)
+            container_layout.setContentsMargins(5, 5, 5, 5)
+            
+            # Create canvas
+            canvas = MplCanvas(width=4, height=3, dpi=100)
+            self.function_canvases.append(canvas)
+            container_layout.addWidget(canvas)
+            
+            # Add label
+            label = QLabel(f"Function {i+1}: {expr}")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setWordWrap(True)
+            container_layout.addWidget(label)
+            
+            # Add to layout
+            self.entire_top_scrolllayout.addWidget(container)
     
     def parse_function(self, expression):
         """Parse function expression using sympy"""
@@ -339,7 +423,7 @@ class GraphingApp(QMainWindow):
     
     def plot_all_graphs(self):
         """Plot all graphs: individual functions, combined view, and analysis"""
-        expressions = self.function_input.text().split(",")
+        expressions = [expr.strip() for expr in self.function_input.text().split(",") if expr.strip()]
         x_min = self.x_min_input.value()
         x_max = self.x_max_input.value()
         resolution = self.resolution_slider.value()
@@ -347,22 +431,32 @@ class GraphingApp(QMainWindow):
         x_range = np.linspace(x_min, x_max, resolution)
         x = symbols('x')
         
+        # Create dynamic canvases for the Entire View tab
+        self.create_dynamic_canvases(expressions)
+        
         # Clear all canvases
-        for canvas in [self.canvas1, self.canvas2, self.canvas3]:
+        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
+                      self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
         
-        self.combined_canvas.axes.clear()
-        self.combined_canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-        
-        self.analysis_canvas.axes.clear()
-        self.analysis_canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+        # Clear the function canvases
+        for canvas in self.function_canvases:
+            canvas.axes.clear()
+            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
         
         # Colors for different functions
-        colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd']
+        colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
+                 '#f72585', '#4cc9f0', '#fb8500', '#0077b6', '#7209b7']
+        
+        # For displaying group plots in Entire View
+        all_functions_data = []
+        all_derivatives_data = []
+        all_integrals_data = []
+        all_critical_points = []
         
         # Plot individual functions
-        for i, expr in enumerate(expressions[:3]):  # Limit to 3 functions for individual plots
+        for i, expr in enumerate(expressions):
             parsed_expr, func = self.parse_function(expr)
             
             if parsed_expr is None or func is None:
@@ -388,7 +482,45 @@ class GraphingApp(QMainWindow):
                 integral_func = lambdify(x, integral_expr, 'numpy')
                 int_values = integral_func(x_range)
                 
-                # Plot on individual canvas if available
+                # Store data for entire view
+                all_functions_data.append((expr, x_range, y_values, colors[i % len(colors)]))
+                all_derivatives_data.append((expr, derivative_expr, x_range, d_values, colors[i % len(colors)]))
+                all_integrals_data.append((expr, integral_expr, x_range, int_values, colors[i % len(colors)]))
+                
+                # Find critical points
+                critical_points = []
+                for j in range(1, len(x_range)):
+                    if (d_values[j-1] < 0 and d_values[j] > 0) or (d_values[j-1] > 0 and d_values[j] < 0):
+                        critical_x = x_range[j]
+                        critical_y = func(critical_x)
+                        critical_points.append((critical_x, critical_y))
+                        all_critical_points.append((expr, critical_x, critical_y, colors[i % len(colors)]))
+                
+                # Plot on dynamic canvas in Entire View tab
+                if i < len(self.function_canvases):
+                    canvas = self.function_canvases[i]
+                    
+                    if self.show_function.isChecked():
+                        canvas.axes.plot(x_range, y_values, label=f"f(x)", color=colors[0])
+                    
+                    if self.show_derivative.isChecked():
+                        canvas.axes.plot(x_range, d_values, label=f"f'(x)", 
+                                        color=colors[1], linestyle='--')
+                    
+                    if self.show_second_derivative.isChecked():
+                        canvas.axes.plot(x_range, d2_values, label=f"f''(x)", 
+                                        color=colors[4], linestyle=':')
+                    
+                    if self.show_integral.isChecked():
+                        canvas.axes.plot(x_range, int_values, label=f"∫f(x)dx", 
+                                        color=colors[2], linestyle='-.')
+                    
+                    canvas.axes.set_title(f"Graph of {expr}")
+                    if self.legend.isChecked():
+                        canvas.axes.legend()
+                    canvas.draw()
+                
+                # Plot on original individual canvas if available
                 if i < 3:
                     canvas = [self.canvas1, self.canvas2, self.canvas3][i]
                     
@@ -416,6 +548,8 @@ class GraphingApp(QMainWindow):
                 if self.show_function.isChecked():
                     self.combined_canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", 
                                                  color=colors[i % len(colors)])
+                    self.combined_small_canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", 
+                                                       color=colors[i % len(colors)])
                 
                 if self.show_derivative.isChecked():
                     self.combined_canvas.axes.plot(x_range, d_values, label=f"f'(x) = {expr}", 
@@ -428,34 +562,41 @@ class GraphingApp(QMainWindow):
                 # Analysis view - overlay function, derivative, integral for comparison
                 self.analysis_canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", 
                                              color=colors[i % len(colors)])
+                self.analysis_small_canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", 
+                                                   color=colors[i % len(colors)])
                 
-                # Add critical points to analysis (where derivative = 0)
-                critical_x = []
-                for j in range(1, len(x_range)):
-                    if (d_values[j-1] < 0 and d_values[j] > 0) or (d_values[j-1] > 0 and d_values[j] < 0):
-                        critical_x.append(x_range[j])
-                        self.analysis_canvas.axes.plot(x_range[j], y_values[j], 'o', 
-                                                    color=colors[i % len(colors)], markersize=8)
+                # Add critical points to analysis
+                for cx, cy in critical_points:
+                    self.analysis_canvas.axes.plot(cx, cy, 'o', color=colors[i % len(colors)], markersize=8)
+                    self.analysis_small_canvas.axes.plot(cx, cy, 'o', color=colors[i % len(colors)], markersize=8)
                 
             except Exception as e:
                 print(f"Error plotting {expr}: {e}")
         
+        # Set titles for combined plots
         self.combined_canvas.axes.set_title("Combined Functions")
+        self.combined_small_canvas.axes.set_title("Combined Functions")
         if self.legend.isChecked():
             self.combined_canvas.axes.legend()
+            self.combined_small_canvas.axes.legend()
         self.combined_canvas.draw()
+        self.combined_small_canvas.draw()
         
+        # Set titles for analysis plots
         self.analysis_canvas.axes.set_title("Analysis View with Critical Points")
+        self.analysis_small_canvas.axes.set_title("Analysis with Critical Points")
         if self.legend.isChecked():
             self.analysis_canvas.axes.legend()
+            self.analysis_small_canvas.axes.legend()
         self.analysis_canvas.draw()
+        self.analysis_small_canvas.draw()
         
-        # Switch to combined tab to show results
-        self.tab_widget.setCurrentIndex(1)
+        # Switch to Entire View tab to show results
+        self.tab_widget.setCurrentIndex(0)
     
     def plot_specific(self, plot_type):
         """Plot only specific type (functions, derivatives, or integrals)"""
-        expressions = self.function_input.text().split(",")
+        expressions = [expr.strip() for expr in self.function_input.text().split(",") if expr.strip()]
         x_min = self.x_min_input.value()
         x_max = self.x_max_input.value()
         resolution = self.resolution_slider.value()
@@ -463,96 +604,153 @@ class GraphingApp(QMainWindow):
         x_range = np.linspace(x_min, x_max, resolution)
         x = symbols('x')
         
+        # Create dynamic canvases for the Entire View tab
+        self.create_dynamic_canvases(expressions)
+        
         # Clear canvases
-        for canvas in [self.canvas1, self.canvas2, self.canvas3]:
+        for canvas in [self.canvas1, self.canvas2, self.canvas3, 
+                      self.combined_canvas, self.combined_small_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
         
-        self.combined_canvas.axes.clear()
-        self.combined_canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+        # Clear the function canvases
+        for canvas in self.function_canvases:
+            canvas.axes.clear()
+            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
         
         # Colors for different functions
-        colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd']
+        colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
+                 '#f72585', '#4cc9f0', '#fb8500', '#0077b6', '#7209b7']
         
-        for i, expr in enumerate(expressions[:3]):
+        for i, expr in enumerate(expressions):
             parsed_expr, func = self.parse_function(expr)
             
             if parsed_expr is None or func is None:
                 continue
                 
             try:
+                plot_color = colors[i % len(colors)]
+                
                 if plot_type == "functions":
                     y_values = func(x_range)
+                    plot_label = f"f(x) = {expr}"
                     
-                    # Individual canvas
+                    # Individual canvases in Entire View
+                    if i < len(self.function_canvases):
+                        self.function_canvases[i].axes.plot(x_range, y_values, 
+                                                           label=plot_label, color=plot_color)
+                        self.function_canvases[i].axes.set_title(f"Function: {expr}")
+                        if self.legend.isChecked():
+                            self.function_canvases[i].axes.legend()
+                        self.function_canvases[i].draw()
+                    
+                    # Original individual canvas
                     if i < 3:
                         canvas = [self.canvas1, self.canvas2, self.canvas3][i]
-                        canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", color=colors[0])
-                        canvas.axes.set_title(f"Function: {expr}")
+                        canvas.axes.plot(x_range, y_values, label=plot_label, color=plot_color)
+                        canvas.axes.set_title(f"Graph of {expr}")
                         if self.legend.isChecked():
                             canvas.axes.legend()
                         canvas.draw()
                     
                     # Combined canvas
-                    self.combined_canvas.axes.plot(x_range, y_values, label=f"f(x) = {expr}", 
-                                                 color=colors[i % len(colors)])
+                    self.combined_canvas.axes.plot(x_range, y_values, label=plot_label, color=plot_color)
+                    self.combined_small_canvas.axes.plot(x_range, y_values, label=plot_label, color=plot_color)
                 
                 elif plot_type == "derivatives":
                     derivative_expr = diff(parsed_expr, x)
                     derivative_func = lambdify(x, derivative_expr, 'numpy')
                     d_values = derivative_func(x_range)
+                    plot_label = f"f'(x) = {derivative_expr}"
                     
-                    # Individual canvas
+                    # Individual canvases in Entire View
+                    if i < len(self.function_canvases):
+                        self.function_canvases[i].axes.plot(x_range, d_values, 
+                                                         label=plot_label, color=plot_color, linestyle='--')
+                        self.function_canvases[i].axes.set_title(f"Derivative: {expr}")
+                        if self.legend.isChecked():
+                            self.function_canvases[i].axes.legend()
+                        self.function_canvases[i].draw()
+                    
+                    # Original individual canvas
                     if i < 3:
                         canvas = [self.canvas1, self.canvas2, self.canvas3][i]
-                        canvas.axes.plot(x_range, d_values, label=f"f'(x) = {derivative_expr}", color=colors[1])
+                        canvas.axes.plot(x_range, d_values, label=plot_label, 
+                                      color=plot_color, linestyle='--')
                         canvas.axes.set_title(f"Derivative of {expr}")
                         if self.legend.isChecked():
                             canvas.axes.legend()
                         canvas.draw()
                     
                     # Combined canvas
-                    self.combined_canvas.axes.plot(x_range, d_values, label=f"f'(x) = {expr}", 
-                                                 color=colors[i % len(colors)])
+                    self.combined_canvas.axes.plot(x_range, d_values, label=plot_label, 
+                                               color=plot_color, linestyle='--')
+                    self.combined_small_canvas.axes.plot(x_range, d_values, label=plot_label, 
+                                                     color=plot_color, linestyle='--')
                 
                 elif plot_type == "integrals":
                     integral_expr = integrate(parsed_expr, x)
                     integral_func = lambdify(x, integral_expr, 'numpy')
                     int_values = integral_func(x_range)
+                    plot_label = f"∫f(x)dx = {integral_expr}"
                     
-                    # Individual canvas
+                    # Individual canvases in Entire View
+                    if i < len(self.function_canvases):
+                        self.function_canvases[i].axes.plot(x_range, int_values, 
+                                                         label=plot_label, color=plot_color, linestyle='-.')
+                        self.function_canvases[i].axes.set_title(f"Integral: {expr}")
+                        if self.legend.isChecked():
+                            self.function_canvases[i].axes.legend()
+                        self.function_canvases[i].draw()
+                    
+                    # Original individual canvas
                     if i < 3:
                         canvas = [self.canvas1, self.canvas2, self.canvas3][i]
-                        canvas.axes.plot(x_range, int_values, label=f"∫f(x)dx = {integral_expr}", color=colors[2])
+                        canvas.axes.plot(x_range, int_values, label=plot_label, 
+                                      color=plot_color, linestyle='-.')
                         canvas.axes.set_title(f"Integral of {expr}")
                         if self.legend.isChecked():
                             canvas.axes.legend()
                         canvas.draw()
                     
                     # Combined canvas
-                    self.combined_canvas.axes.plot(x_range, int_values, label=f"∫f(x)dx = {expr}", 
-                                                 color=colors[i % len(colors)])
+                    self.combined_canvas.axes.plot(x_range, int_values, label=plot_label, 
+                                               color=plot_color, linestyle='-.')
+                    self.combined_small_canvas.axes.plot(x_range, int_values, label=plot_label, 
+                                                     color=plot_color, linestyle='-.')
             
             except Exception as e:
-                print(f"Error plotting {plot_type} for {expr}: {e}")
+                print(f"Error plotting {expr} ({plot_type}): {e}")
         
-        # Set title for combined plot
-        if plot_type == "functions":
-            self.combined_canvas.axes.set_title("All Functions")
-        elif plot_type == "derivatives":
-            self.combined_canvas.axes.set_title("All Derivatives")
-        elif plot_type == "integrals":
-            self.combined_canvas.axes.set_title("All Integrals")
-        
+        # Set titles for combined plots
+        self.combined_canvas.axes.set_title(f"Combined {plot_type.title()}")
+        self.combined_small_canvas.axes.set_title(f"Combined {plot_type.title()}")
         if self.legend.isChecked():
             self.combined_canvas.axes.legend()
+            self.combined_small_canvas.axes.legend()
         self.combined_canvas.draw()
+        self.combined_small_canvas.draw()
         
-        self.tab_widget.setCurrentIndex(1)
+        # Switch to appropriate tab
+        if plot_type == "functions":
+            self.tab_widget.setCurrentIndex(0)  # Entire View
+        else:
+            self.tab_widget.setCurrentIndex(2)  # Combined View
     
     def clear_plots(self):
         """Clear all plots"""
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, self.analysis_canvas]:
+        # Clear all canvases
+        for canvas in [self.canvas1, self.canvas2, self.canvas3, 
+                      self.combined_canvas, self.analysis_canvas,
+                      self.combined_small_canvas, self.analysis_small_canvas]:
+            canvas.axes.clear()
+            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+            canvas.axes.set_xlabel('x')
+            canvas.axes.set_ylabel('y')
+            canvas.draw()
+        
+        # Clear function canvases if they exist
+        for canvas in self.function_canvases:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
             canvas.axes.set_xlabel('x')
@@ -560,97 +758,58 @@ class GraphingApp(QMainWindow):
             canvas.draw()
     
     def save_plots(self):
-        """Save plots with customizable options"""
-        from PyQt6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QCheckBox, QComboBox, QLabel, QDialogButtonBox
-        
-        # Create a custom dialog for save options
-        dialog = QDialog(self)
-        dialog.setMinimumSize(250, 270)
-        dialog.setMaximumSize(300, 300) 
-        dialog.setWindowTitle("Save Plot Options")
-        layout = QVBoxLayout(dialog)
-        
-        # Plot selection checkboxes
-        layout.addWidget(QLabel("Select plots to save:"))
-        cb_function1 = QCheckBox("Function 1")
-        cb_function2 = QCheckBox("Function 2")
-        cb_function3 = QCheckBox("Function 3")
-        cb_combined = QCheckBox("Combined View")
-        cb_analysis = QCheckBox("Analysis View")
-        
-        # Check all by default
-        for cb in [cb_function1, cb_function2, cb_function3, cb_combined, cb_analysis]:
-            cb.setChecked(True)
-            layout.addWidget(cb)
-        
-        # File format selection
-        layout.addWidget(QLabel("File format:"))
-        format_combo = QComboBox()
-        format_combo.addItems(["PNG", "JPG", "SVG", "PDF"])
-        layout.addWidget(format_combo)
-        
-        # Dialog buttons
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-        
-        # Show dialog and get result
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-        
-        # Get selected file format
-        file_format = format_combo.currentText().lower()
-        
-        # Ask user to select a directory
-        save_dir = QFileDialog.getExistingDirectory(
-            self, 
-            "Select Directory to Save Plots",
-            "",
-            QFileDialog.Option.ShowDirsOnly
-        )
+        """Save all plots as images"""
+        # Get directory to save
+        save_dir = QFileDialog.getExistingDirectory(self, "Select Directory to Save Plots")
         
         if not save_dir:
             return
+            
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        try:
-            import os
-            saved_files = []
-            
-            # Save selected plots
-            if cb_function1.isChecked():
-                filename = os.path.join(save_dir, f"function1.{file_format}")
-                self.canvas1.fig.savefig(filename)
-                saved_files.append(filename)
-                
-            if cb_function2.isChecked():
-                filename = os.path.join(save_dir, f"function2.{file_format}")
-                self.canvas2.fig.savefig(filename)
-                saved_files.append(filename)
-                
-            if cb_function3.isChecked():
-                filename = os.path.join(save_dir, f"function3.{file_format}")
-                self.canvas3.fig.savefig(filename)
-                saved_files.append(filename)
-                
-            if cb_combined.isChecked():
-                filename = os.path.join(save_dir, f"combined_view.{file_format}")
-                self.combined_canvas.fig.savefig(filename)
-                saved_files.append(filename)
-                
-            if cb_analysis.isChecked():
-                filename = os.path.join(save_dir, f"analysis_view.{file_format}")
-                self.analysis_canvas.fig.savefig(filename)
-                saved_files.append(filename)
-            
-            # Show success message
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self, 
-                "Success", 
-                f"Saved {len(saved_files)} plot(s) to:\n{save_dir}"
-            )
-            
-        except Exception as e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Error saving plots: {e}")
+        # Save individual canvases
+        for i, canvas in enumerate([self.canvas1, self.canvas2, self.canvas3]):
+            if not canvas.axes.lines:  # Skip empty plots
+                continue
+            filename = os.path.join(save_dir, f"{timestamp}_function_{i+1}.png")
+            canvas.figure.savefig(filename, dpi=300, bbox_inches='tight')
+        
+        # Save combined view
+        if self.combined_canvas.axes.lines:
+            filename = os.path.join(save_dir, f"{timestamp}_combined_view.png")
+            self.combined_canvas.figure.savefig(filename, dpi=300, bbox_inches='tight')
+        
+        # Save analysis view
+        if self.analysis_canvas.axes.lines:
+            filename = os.path.join(save_dir, f"{timestamp}_analysis_view.png")
+            self.analysis_canvas.figure.savefig(filename, dpi=300, bbox_inches='tight')
+        
+        # Save function canvases from Entire View
+        for i, canvas in enumerate(self.function_canvases):
+            if not canvas.axes.lines:  # Skip empty plots
+                continue
+            filename = os.path.join(save_dir, f"{timestamp}_entire_view_function_{i+1}.png")
+            canvas.figure.savefig(filename, dpi=300, bbox_inches='tight')
+        
+        QMessageBox.information(self, "Save Complete", 
+                               f"All plots have been saved to:\n{save_dir}")
+
+
+class MplCanvas(FigureCanvasQTAgg):
+    """Canvas for matplotlib plots"""
+    def __init__(self, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+        fig.tight_layout()
+
+
+def main():
+    app = QApplication(sys.argv)
+    window = GraphingApp()
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
