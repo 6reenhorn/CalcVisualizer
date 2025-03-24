@@ -400,14 +400,48 @@ class GraphingApp(QMainWindow):
         self.individual_tab = QWidget()
         individual_layout = QGridLayout(self.individual_tab)
         
-        # Create individual canvases
+        # Create individual canvases with responsive sizing
         self.canvas1 = MplCanvas(width=6, height=6, dpi=100)
         self.canvas2 = MplCanvas(width=6, height=6, dpi=100)
         self.canvas3 = MplCanvas(width=6, height=6, dpi=100)
         
-        individual_layout.addWidget(self.canvas1, 0, 0)
-        individual_layout.addWidget(self.canvas2, 0, 1)
-        individual_layout.addWidget(self.canvas3, 1, 0)
+        # Set size policies for responsive resizing
+        for canvas in [self.canvas1, self.canvas2, self.canvas3]:
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas.setMinimumSize(200, 150)
+        
+        # Create frames for each canvas
+        canvas1_frame = QFrame()
+        canvas2_frame = QFrame()
+        canvas3_frame = QFrame()
+        
+        for frame in [canvas1_frame, canvas2_frame, canvas3_frame]:
+            frame.setStyleSheet("""
+                QFrame {
+                    background-color: #3e3e3e;
+                    border-radius: 8px;
+                    border: 1px solid #555;
+                }
+            """)
+            frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+        # Add canvases to frames with layouts
+        canvas1_layout = QVBoxLayout(canvas1_frame)
+        canvas2_layout = QVBoxLayout(canvas2_frame)
+        canvas3_layout = QVBoxLayout(canvas3_frame)
+        
+        canvas1_layout.addWidget(self.canvas1)
+        canvas2_layout.addWidget(self.canvas2)
+        canvas3_layout.addWidget(self.canvas3)
+        
+        # Add frames to grid layout with proper spacing
+        individual_layout.addWidget(canvas1_frame, 0, 0)
+        individual_layout.addWidget(canvas2_frame, 0, 1)
+        individual_layout.addWidget(canvas3_frame, 1, 0)
+        
+        # Set layout spacing and margins
+        individual_layout.setSpacing(10)
+        individual_layout.setContentsMargins(10, 10, 10, 10)
         
         # Combined tab
         self.combined_tab = QWidget()
