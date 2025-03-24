@@ -540,6 +540,10 @@ class GraphingApp(QMainWindow):
             # Create canvas with responsive size
             canvas = MplCanvas(width=5, height=3.5, dpi=100)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            
+            # Apply theme to the new canvas
+            self.apply_plot_theme(canvas.axes)
+            
             canvas_frame_layout.addWidget(canvas)
             self.function_canvases.append(canvas)
             
@@ -659,18 +663,20 @@ class GraphingApp(QMainWindow):
         # Create dynamic canvases for the Entire View tab
         self.create_dynamic_canvases(expressions)
         
-        # Clear all canvases
+        # Clear all canvases and apply theme
         for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
                       self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
             self.set_y_scale(canvas.axes)
+            self.apply_plot_theme(canvas.axes)  # Apply theme to each canvas
         
-        # Clear the function canvases
+        # Clear the function canvases and apply theme
         for canvas in self.function_canvases:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
             self.set_y_scale(canvas.axes)
+            self.apply_plot_theme(canvas.axes)  # Apply theme to each canvas
         
         # Colors for different functions
         colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
@@ -877,14 +883,19 @@ class GraphingApp(QMainWindow):
         x_range = np.linspace(x_min, x_max, resolution)
         x = symbols('x')
         
-        # Clear canvases
+        # Clear canvases and apply theme
         for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
             self.set_y_scale(canvas.axes)
+            self.apply_plot_theme(canvas.axes)  # Apply theme to each canvas
         
         # Create dynamic canvases for the Entire View tab
         self.create_dynamic_canvases(expressions)
+        
+        # Apply theme to all dynamic canvases
+        for canvas in self.function_canvases:
+            self.apply_plot_theme(canvas.axes)
         
         # Colors for different functions
         colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
