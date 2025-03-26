@@ -701,7 +701,6 @@ class GraphingApp(QMainWindow):
         
         try:
             parsed_expr = sympify(expression.strip(), locals=math_functions)
-            print(f"User Input: {expression} -> Parsed Expression: {parsed_expr}")
 
             numpy_functions = {
                 "sin": np.sin, "cos": np.cos, "exp": np.exp, "log": np.log,
