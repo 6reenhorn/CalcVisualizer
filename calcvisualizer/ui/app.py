@@ -308,8 +308,9 @@ class GraphingApp(QMainWindow):
         viz_group = QGroupBox("Visualization Options")
         viz_layout = QVBoxLayout(viz_group)
         
-        # Checkboxes for what to display
-        display_layout = QGridLayout()
+        # Checkboxes section at the top
+        checkbox_layout = QGridLayout()
+        # Display options
         self.show_function = QCheckBox("Show Functions")
         self.show_function.setChecked(True)
         self.show_derivative = QCheckBox("Show Derivatives")
@@ -317,47 +318,51 @@ class GraphingApp(QMainWindow):
         self.show_integral = QCheckBox("Show Integrals")
         self.show_integral.setChecked(True)
         self.show_second_derivative = QCheckBox("Show Second Derivatives")
-        
-        display_layout.addWidget(self.show_function, 0, 0)
-        display_layout.addWidget(self.show_derivative, 0, 1)
-        display_layout.addWidget(self.show_integral, 1, 0)
-        display_layout.addWidget(self.show_second_derivative, 1, 1)
-        
-        viz_layout.addLayout(display_layout)
-        
-        # Graph style options
-        style_layout = QGridLayout()
+
+        # Style options
         self.grid_lines = QCheckBox("Show Grid")
         self.grid_lines.setChecked(True)
         self.legend = QCheckBox("Show Legend")
         self.legend.setChecked(True)
-        self.normalize = QCheckBox("Normalize Functions") # New option
+        self.normalize = QCheckBox("Normalize Functions")
         self.normalize.setChecked(False)
-        
-        self.theme_label = QLabel("Graph Theme:")
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["Default", "Dark", "Seaborn", "Science", "High Contrast"])
-        
-        # Add Y-scale options
-        self.y_scale_label = QLabel("Y-Scale:")
-        self.y_scale_combo = QComboBox()
-        self.y_scale_combo.addItems(["Linear", "Logarithmic", "Symmetric Log"])
-
         self.auto_scale_y = QCheckBox("Auto Y Scale")
         self.auto_scale_y.setChecked(True)
         self.auto_scale_y.stateChanged.connect(self.toggle_y_scale_controls)
 
-        # Update the style_layout to include the new widgets
-        style_layout.addWidget(self.y_scale_label, 0, 0)
-        style_layout.addWidget(self.y_scale_combo, 0, 1)
-        style_layout.addWidget(self.auto_scale_y, 1, 0)
-        style_layout.addWidget(self.grid_lines, 2, 0)
-        style_layout.addWidget(self.legend, 2, 1)
-        style_layout.addWidget(self.normalize, 3, 0)
-        style_layout.addWidget(self.theme_label, 4, 0)
-        style_layout.addWidget(self.theme_combo, 4, 1)
-        
-        viz_layout.addLayout(style_layout)
+        # Add checkboxes to layout (2 columns)
+        checkbox_layout.addWidget(self.show_function, 0, 0)
+        checkbox_layout.addWidget(self.show_derivative, 0, 1)
+        checkbox_layout.addWidget(self.show_integral, 1, 0)
+        checkbox_layout.addWidget(self.show_second_derivative, 1, 1)
+        checkbox_layout.addWidget(self.grid_lines, 2, 0)
+        checkbox_layout.addWidget(self.legend, 2, 1)
+        checkbox_layout.addWidget(self.normalize, 3, 0)
+        checkbox_layout.addWidget(self.auto_scale_y, 3, 1)
+
+        # Dropdown section at the bottom
+        dropdown_layout = QGridLayout()
+        # Y-scale options
+        self.y_scale_label = QLabel("Y-Scale:")
+        self.y_scale_combo = QComboBox()
+        self.y_scale_combo.addItems(["Linear", "Logarithmic", "Symmetric Log"])
+
+        # Theme options
+        self.theme_label = QLabel("Graph Theme:")
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Default", "Dark", "Seaborn", "Science", "High Contrast"])
+
+        # Add dropdowns to layout
+        dropdown_layout.addWidget(self.y_scale_label, 0, 0)
+        dropdown_layout.addWidget(self.y_scale_combo, 0, 1)
+        dropdown_layout.addWidget(self.theme_label, 1, 0)
+        dropdown_layout.addWidget(self.theme_combo, 1, 1)
+
+        # Add layouts to main visualization layout
+        viz_layout.addLayout(checkbox_layout)
+        viz_layout.addSpacing(10)  # Add some space between sections
+        viz_layout.addLayout(dropdown_layout)
+
         left_layout.addWidget(viz_group)
         
         # Function Visibility Group (new)
@@ -605,7 +610,9 @@ class GraphingApp(QMainWindow):
         self.y_max_input.setEnabled(not checked)
     
     def update_resolution_label(self, value):
+        """Update the resolution label when slider value changes"""
         self.resolution_value.setText(f"{value} points")
+        # Don't trigger plot updates automatically
     
     def initialize_plots(self):
         """Initialize empty plots with grids and labels"""
