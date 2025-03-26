@@ -519,14 +519,14 @@ class GraphingApp(QMainWindow):
                 widget.deleteLater()
 
         # Add left spacer for centering
-        self.entire_top_scrolllayout.addStretch(1)
+        self.entire_top_scrolllayout.addStretch(2)
 
         # Create a canvas for each function
         for i, expr in enumerate(expressions):
             container = QWidget()
             container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             container_layout = QVBoxLayout(container)
-            container_layout.setContentsMargins(10, 20, 10, 20)
+            container_layout.setContentsMargins(10, 10, 10, 10)
             container_layout.setSpacing(10)
             
             # Create frame for the canvas
@@ -552,10 +552,10 @@ class GraphingApp(QMainWindow):
             
             # Add label with word wrap
             label = QLabel(f"Function {i+1}: {expr}")
-            label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setStyleSheet("""
                 font-weight: bold; 
-                margin-top: 15px;
+                margin-top: 5px;
                 padding: 5px;
                 background-color: rgba(58, 134, 255, 0.1);
                 border-radius: 4px;
