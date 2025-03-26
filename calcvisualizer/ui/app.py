@@ -339,6 +339,8 @@ class GraphingApp(QMainWindow):
         """)
 
         self.entire_top_scrollcontent = QWidget()
+        self.entire_top_scrollcontent.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.entire_top_scrollcontent.setMinimumSize(0, 0)
         self.entire_top_scrolllayout = QHBoxLayout(self.entire_top_scrollcontent)
         self.entire_top_scrolllayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.entire_top_scrolllayout.setSpacing(10)
@@ -485,8 +487,9 @@ class GraphingApp(QMainWindow):
         # Initialize visibility and function list
         self.function_visibility = {}
         
-        # Initialize with empty plots
+        # Initialize with empty plots and show empty graph in Entire View
         self.initialize_plots()
+        self.create_dynamic_canvases([], force_empty=True)  # Show empty graph at startup
         
     def toggle_y_scale_controls(self, checked):
         """Enable/disable Y scale controls based on auto-scale checkbox"""
@@ -506,7 +509,7 @@ class GraphingApp(QMainWindow):
             canvas.axes.set_ylabel('y')
             canvas.draw()
     
-    def create_dynamic_canvases(self, expressions):
+    def create_dynamic_canvases(self, expressions, force_empty=False):
         """Create canvases dynamically based on the number of functions"""
         # Clear any existing content
         self.function_canvases = []
@@ -519,54 +522,59 @@ class GraphingApp(QMainWindow):
                 widget.deleteLater()
 
         # Add left spacer for centering
-        self.entire_top_scrolllayout.addStretch(2)
+        self.entire_top_scrolllayout.addStretch(1)
 
-        # Create a canvas for each function
-        for i, expr in enumerate(expressions):
+        # If no functions exist or force_empty is True, show one empty graph
+        if not expressions or force_empty:
             container = QWidget()
-            container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
             container_layout = QVBoxLayout(container)
             container_layout.setContentsMargins(10, 10, 10, 10)
             container_layout.setSpacing(10)
-            
+
             # Create frame for the canvas
             canvas_frame = QFrame()
-            canvas_frame.setMinimumSize(200, 150)  
-            canvas_frame.setMaximumSize(420, 300)  
+            canvas_frame.setMinimumSize(150, 100)  # Larger minimum size
+            canvas_frame.setMaximumSize(1500, 300)  # Larger maximum size
             canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas_frame_layout = QVBoxLayout(canvas_frame)
             canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
-            
-            # Create canvas with responsive size
-            canvas = MplCanvas(width=5, height=3.5, dpi=100)
+
+            # Create empty canvas
+            canvas = MplCanvas(width=15, height=6, dpi=100)  # Larger initial size
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            
-            # Apply theme to the new canvas
+
+            # Set up empty graph with axes
+            canvas.axes.clear()
+            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+            canvas.axes.set_xlabel('x')
+            canvas.axes.set_ylabel('y')
             self.apply_plot_theme(canvas.axes)
-            
+            canvas.draw()
+
             canvas_frame_layout.addWidget(canvas)
             self.function_canvases.append(canvas)
-            
+
             # Add canvas frame to container
             container_layout.addWidget(canvas_frame)
-            
+
             # Add label with word wrap
-            label = QLabel(f"Function {i+1}: {expr}")
+            label = QLabel("No functions to plot.")
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
             label.setStyleSheet("""
-                font-weight: bold; 
-                margin-top: 5px;
-                padding: 5px;
-                background-color: rgba(58, 134, 255, 0.1);
-                border-radius: 4px;
+                    font-weight: bold; 
+                    margin-top: 5px;
+                    padding: 5px;
+                    background-color: rgba(58, 134, 255, 0.1);
+                    border-radius: 4px;
             """)
             label.setWordWrap(True)
-            label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
             container_layout.addWidget(label)
-            
+
             # Create a frame for the container
             frame = QFrame()
-            frame.setObjectName(f"function_frame_{i}")
+            frame.setObjectName("initial_empty_frame")
             frame.setStyleSheet("""
                 QFrame {
                     background-color: #3e3e3e;
@@ -575,10 +583,74 @@ class GraphingApp(QMainWindow):
                 }
             """)
             frame.setLayout(container_layout)
-            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            
+            frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
             # Add to layout
             self.entire_top_scrolllayout.addWidget(frame)
+
+        else:   
+            # Create a canvas for each function
+            for i, expr in enumerate(expressions):
+                container = QWidget()
+                container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+                container_layout = QVBoxLayout(container)
+                container_layout.setContentsMargins(10, 10, 10, 10)
+                container_layout.setSpacing(10)
+
+                # Create frame for the canvas
+                canvas_frame = QFrame()
+                canvas_frame.setMinimumSize(200, 100)  # Allows resizing
+                canvas_frame.setMaximumSize(16777215, 300)  # No hard limit
+                canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+                canvas_frame_layout = QVBoxLayout(canvas_frame)
+                canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
+
+                # Create canvas with responsive size
+                canvas = MplCanvas(width=15, height=3.5, dpi=100)
+                canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+                
+                # Set up empty graph with axes
+                canvas.axes.clear()
+                canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                canvas.axes.set_xlabel('x')
+                canvas.axes.set_ylabel('y')
+                self.apply_plot_theme(canvas.axes)
+
+                canvas_frame_layout.addWidget(canvas)
+                self.function_canvases.append(canvas)
+
+                # Add canvas frame to container
+                container_layout.addWidget(canvas_frame)
+
+                # Add label with word wrap
+                label = QLabel(f"Function {i+1}: {expr}")
+                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                label.setStyleSheet("""
+                    font-weight: bold; 
+                    margin-top: 5px;
+                    padding: 5px;
+                    background-color: rgba(58, 134, 255, 0.1);
+                    border-radius: 4px;
+                """)
+                label.setWordWrap(True)
+                label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+                container_layout.addWidget(label)
+
+                # Create a frame for the container
+                frame = QFrame()
+                frame.setObjectName(f"function_frame_{i}")
+                frame.setStyleSheet("""
+                    QFrame {
+                        background-color: #3e3e3e;
+                        border-radius: 8px;
+                        border: 1px solid #555;
+                    }
+                """)
+                frame.setLayout(container_layout)
+                frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+                # Add to layout
+                self.entire_top_scrolllayout.addWidget(frame)
 
         # Add right spacer for centering
         self.entire_top_scrolllayout.addStretch(1)
@@ -588,6 +660,9 @@ class GraphingApp(QMainWindow):
 
         # Force layout update
         self.entire_top_scrollcontent.adjustSize()
+
+    def setup_ui(self):
+            self.create_dynamic_canvases([])  # Show empty graph at startup
     
     def update_function_visibility_checkboxes(self, expressions):
         """Update the function visibility checkboxes based on the current functions"""
