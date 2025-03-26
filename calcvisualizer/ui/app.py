@@ -1214,40 +1214,50 @@ class GraphingApp(QMainWindow):
     
     def clear_plots(self):
         """Clear all plots and reset to default state"""
-        # Clear all regular canvases
-        canvases = [self.combined_canvas, self.analysis_canvas, 
-                    self.combined_small_canvas, self.analysis_small_canvas]
-        
-        # Add individual canvases if they exist
-        if self.canvas1:
-            canvases.append(self.canvas1)
-        if self.canvas2:
-            canvases.append(self.canvas2)
-        if self.canvas3:
-            canvases.append(self.canvas3)
-        
-        for canvas in canvases:
-            if canvas:  # Check if canvas exists
-                canvas.axes.clear()
-                canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-                canvas.axes.set_xlabel('x')
-                canvas.axes.set_ylabel('y')
-                self.apply_plot_theme(canvas.axes)
-                canvas.draw()
-        
-        # Reset the individual tab to show single empty graph
-        self.create_empty_individual_graph()
-        
-        # Reset the top layout to show single empty graph
-        self.create_dynamic_canvases([], force_empty=True)
-        
-        # Clear function visibility checkboxes
-        while self.function_visibility_checkboxes:
-            checkbox = self.function_visibility_checkboxes.pop()
-            checkbox.setParent(None)
-        
-        # Reset function visibility dictionary
-        self.function_visibility = {}
+        try:
+            # Clear all regular canvases
+            canvases = [self.combined_canvas, self.analysis_canvas, 
+                        self.combined_small_canvas, self.analysis_small_canvas]
+            
+            # Add individual canvases if they exist
+            if hasattr(self, 'canvas1') and self.canvas1:
+                canvases.append(self.canvas1)
+            if hasattr(self, 'canvas2') and self.canvas2:
+                canvases.append(self.canvas2)
+            if hasattr(self, 'canvas3') and self.canvas3:
+                canvases.append(self.canvas3)
+            
+            # Clear each canvas safely
+            for canvas in canvases:
+                if canvas and not canvas.isDeleted():
+                    canvas.axes.clear()
+                    canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                    canvas.axes.set_xlabel('x')
+                    canvas.axes.set_ylabel('y')
+                    self.apply_plot_theme(canvas.axes)
+                    canvas.draw()
+            
+            # Reset canvas references
+            self.canvas1 = None
+            self.canvas2 = None
+            self.canvas3 = None
+            
+            # Reset the individual tab to show single empty graph
+            self.create_empty_individual_graph()
+            
+            # Reset the top layout to show single empty graph
+            self.create_dynamic_canvases([], force_empty=True)
+            
+            # Clear function visibility checkboxes
+            while self.function_visibility_checkboxes:
+                checkbox = self.function_visibility_checkboxes.pop()
+                checkbox.setParent(None)
+            
+            # Reset function visibility dictionary
+            self.function_visibility = {}
+            
+        except Exception as e:
+            print(f"Error in clear_plots: {e}")
     
     def save_plots(self):
         """Save plots with customizable options"""
