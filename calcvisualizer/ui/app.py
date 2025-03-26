@@ -149,7 +149,7 @@ class GraphingApp(QMainWindow):
         function_layout.addWidget(self.function_input)
         
         # X Range settings
-        range_layout = QGridLayout()
+        range_layout = QVBoxLayout()
         self.x_min_label = QLabel("X Min:")
         self.x_min_input = QDoubleSpinBox()
         self.x_min_input.setRange(-1000, 0)
@@ -184,6 +184,16 @@ class GraphingApp(QMainWindow):
         x_max_inc.setFixedSize(20, 20)
         x_max_buttons.addWidget(x_max_dec)
         x_max_buttons.addWidget(x_max_inc)
+
+        # X Range horizontal layout
+        x_range_layout = QHBoxLayout()
+        x_range_layout.addWidget(self.x_min_label)
+        x_range_layout.addWidget(self.x_min_input)
+        x_range_layout.addLayout(x_min_buttons)
+        x_range_layout.addStretch(1)  # Add stretch to create space
+        x_range_layout.addWidget(self.x_max_label)
+        x_range_layout.addWidget(self.x_max_input)
+        x_range_layout.addLayout(x_max_buttons)
         
         # Y Range settings
         self.y_min_label = QLabel("Y Min:")
@@ -220,6 +230,19 @@ class GraphingApp(QMainWindow):
         y_max_inc.setFixedSize(20, 20)
         y_max_buttons.addWidget(y_max_dec)
         y_max_buttons.addWidget(y_max_inc)
+
+        # Y Range horizontal layout
+        y_range_layout = QHBoxLayout()
+        y_range_layout.addWidget(self.y_min_label)
+        y_range_layout.addWidget(self.y_min_input)
+        y_range_layout.addLayout(y_min_buttons)
+        y_range_layout.addStretch(1)  # Add stretch to create space
+        y_range_layout.addWidget(self.y_max_label)
+        y_range_layout.addWidget(self.y_max_input)
+        y_range_layout.addLayout(y_max_buttons)
+
+        range_layout.addLayout(x_range_layout)
+        range_layout.addLayout(y_range_layout)
         
         # Resolution settings
         resolution_layout = QHBoxLayout()
@@ -239,24 +262,7 @@ class GraphingApp(QMainWindow):
         self.resolution_slider.valueChanged.connect(self.update_resolution_label)
 
         # Add resolution layout to range_layout
-        range_layout.addWidget(self.resolution_label, 2, 0)
-        range_layout.addWidget(self.resolution_slider, 2, 1, 1, 4)
-        range_layout.addWidget(self.resolution_value, 2, 5)
-        
-        # Add widgets to layout
-        range_layout.addWidget(self.x_min_label, 0, 0)
-        range_layout.addWidget(self.x_min_input, 0, 1)
-        range_layout.addLayout(x_min_buttons, 0, 2)
-        range_layout.addWidget(self.x_max_label, 0, 3)
-        range_layout.addWidget(self.x_max_input, 0, 4)
-        range_layout.addLayout(x_max_buttons, 0, 5)
-        
-        range_layout.addWidget(self.y_min_label, 1, 0)
-        range_layout.addWidget(self.y_min_input, 1, 1)
-        range_layout.addLayout(y_min_buttons, 1, 2)
-        range_layout.addWidget(self.y_max_label, 1, 3)
-        range_layout.addWidget(self.y_max_input, 1, 4)
-        range_layout.addLayout(y_max_buttons, 1, 5)
+        range_layout.addLayout(resolution_layout)
         
         # Style the increment/decrement buttons
         small_button_style = """
