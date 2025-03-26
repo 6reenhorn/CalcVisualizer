@@ -991,8 +991,9 @@ class GraphingApp(QMainWindow):
         # Create dynamic canvases for the Entire View tab
         self.create_dynamic_canvases(expressions)
         
-        # Clear canvases and apply theme
-        canvases = [self.combined_canvas]
+        # Clear all canvases and apply theme
+        canvases = [self.combined_canvas, self.analysis_canvas, 
+                    self.combined_small_canvas, self.analysis_small_canvas]
         
         # Add individual canvases if they exist
         if self.canvas1:
@@ -1012,6 +1013,12 @@ class GraphingApp(QMainWindow):
         # Colors for different functions
         colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
                  '#f72585', '#4cc9f0', '#fb8500', '#0077b6', '#7209b7']
+        
+        # Store data for combined and analysis views
+        all_functions_data = []
+        all_derivatives_data = []
+        all_integrals_data = []
+        all_critical_points = []
         
         # Plot selected graph type
         for i, expr in enumerate(expressions):
@@ -1039,124 +1046,119 @@ class GraphingApp(QMainWindow):
                 if canvas is None:
                     continue
                 
-                # Plot on both individual and dynamic canvases
+                # Calculate values based on plot type
+                if plot_type == "functions":
+                    y_values = func(x_range)
+                    y_values = np.nan_to_num(y_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                    if self.normalize.isChecked():
+                        y_max = max(abs(np.max(y_values)), abs(np.min(y_values)))
+                        if y_max > 0:
+                            y_values = y_values / y_max
+                    all_functions_data.append((expr, x_range, y_values, colors[i % len(colors)]))
+                
+                elif plot_type == "derivatives":
+                    derivative_expr = diff(parsed_expr, x)
+                    derivative_func = lambdify(x, derivative_expr, 'numpy')
+                    d_values = derivative_func(x_range)
+                    d_values = np.nan_to_num(d_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                    if self.normalize.isChecked():
+                        d_max = max(abs(np.max(d_values)), abs(np.min(d_values)))
+                        if d_max > 0:
+                            d_values = d_values / d_max
+                    all_derivatives_data.append((expr, derivative_expr, x_range, d_values, colors[i % len(colors)]))
+                    
+                    # Find critical points
+                    critical_points = []
+                    for j in range(1, len(x_range) - 1):
+                        if (d_values[j-1] * d_values[j+1] <= 0) or abs(d_values[j]) < 1e-6:
+                            y_val = func(x_range[j])
+                            critical_points.append((x_range[j], y_val))
+                    all_critical_points.extend([(expr, cp[0], cp[1], colors[i % len(colors)]) for cp in critical_points])
+                
+                elif plot_type == "integrals":
+                    integral_expr = integrate(parsed_expr, x)
+                    integral_func = lambdify(x, integral_expr, 'numpy')
+                    int_values = integral_func(x_range)
+                    int_values = np.nan_to_num(int_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                    if self.normalize.isChecked():
+                        int_max = max(abs(np.max(int_values)), abs(np.min(int_values)))
+                        if int_max > 0:
+                            int_values = int_values / int_max
+                    all_integrals_data.append((expr, integral_expr, x_range, int_values, colors[i % len(colors)]))
+                
+                # Plot on individual and dynamic canvases
                 for current_canvas in [canvas, dynamic_canvas]:
                     if current_canvas is None:
                         continue
                         
-                    current_canvas.axes.clear()
-                    current_canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-                    self.set_y_scale(current_canvas.axes)
-                    
-                    # Calculate and plot based on type
                     if plot_type == "functions":
-                        y_values = func(x_range)
-                        y_values = np.nan_to_num(y_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                        
-                        if self.normalize.isChecked():
-                            y_max = max(abs(np.max(y_values)), abs(np.min(y_values)))
-                            if y_max > 0:
-                                y_values = y_values / y_max
-                        
                         current_canvas.axes.plot(x_range, y_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"f(x) = {expr}")
-                    
                     elif plot_type == "derivatives":
-                        derivative_expr = diff(parsed_expr, x)
-                        derivative_func = lambdify(x, derivative_expr, 'numpy')
-                        d_values = derivative_func(x_range)
-                        d_values = np.nan_to_num(d_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                        
-                        if self.normalize.isChecked():
-                            d_max = max(abs(np.max(d_values)), abs(np.min(d_values)))
-                            if d_max > 0:
-                                d_values = d_values / d_max
-                        
                         current_canvas.axes.plot(x_range, d_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"f'(x) = {derivative_expr}")
-                        
-                        # Plot critical points
-                        critical_points = []
-                        for j in range(1, len(x_range) - 1):
-                            if (d_values[j-1] * d_values[j+1] <= 0) or abs(d_values[j]) < 1e-6:
-                                y_val = func(x_range[j])
-                                critical_points.append((x_range[j], y_val))
-                        
-                        # Plot the critical points on function graph
-                        y_values = func(x_range)
-                        y_values = np.nan_to_num(y_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                        current_canvas.axes.plot(x_range, y_values, color=colors[i % len(colors)], 
-                                              linewidth=1, linestyle=':', alpha=0.5)
-                        
-                        for cp in critical_points:
-                            current_canvas.axes.plot(cp[0], cp[1], 'o', color=colors[i % len(colors)], 
-                                                  markersize=6)
-                            current_canvas.axes.annotate(f"({cp[0]:.2f}, {cp[1]:.2f})", 
-                                                       (cp[0], cp[1]), 
-                                                       textcoords="offset points", 
-                                                       xytext=(0,10), 
-                                                       ha='center')
-                    
                     elif plot_type == "integrals":
-                        integral_expr = integrate(parsed_expr, x)
-                        integral_func = lambdify(x, integral_expr, 'numpy')
-                        int_values = integral_func(x_range)
-                        int_values = np.nan_to_num(int_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                        
-                        if self.normalize.isChecked():
-                            int_max = max(abs(np.max(int_values)), abs(np.min(int_values)))
-                            if int_max > 0:
-                                int_values = int_values / int_max
-                        
                         current_canvas.axes.plot(x_range, int_values, color=colors[i % len(colors)], 
                                               linewidth=2, label=f"∫f(x)dx = {integral_expr} + C")
                     
-                    # Set axis labels and apply settings
                     current_canvas.axes.set_xlabel('x')
                     current_canvas.axes.set_ylabel('y')
-                    
                     if self.legend.isChecked():
                         current_canvas.axes.legend(loc='upper left', fontsize='small')
-                    
-                    # Apply theme settings
-                    self.apply_plot_theme(current_canvas.axes)
-                    
-                    # Apply axis limits if auto-scale is disabled
                     self.apply_axis_limits(current_canvas.axes)
-                    
-                    # Draw the plot
                     current_canvas.draw()
-                
-                # Also plot on combined view
-                if self.combined_canvas is not None:
-                    if plot_type == "functions":
-                        self.combined_canvas.axes.plot(x_range, y_values, color=colors[i % len(colors)], 
-                                                    linewidth=2, label=f"f(x) = {expr}")
-                    elif plot_type == "derivatives":
-                        self.combined_canvas.axes.plot(x_range, d_values, color=colors[i % len(colors)], 
-                                                    linewidth=2, label=f"f'(x) = {derivative_expr}")
-                    elif plot_type == "integrals":
-                        self.combined_canvas.axes.plot(x_range, int_values, color=colors[i % len(colors)], 
-                                                    linewidth=2, label=f"∫f(x)dx = {integral_expr} + C")
-                    
-                    self.combined_canvas.axes.set_xlabel('x')
-                    self.combined_canvas.axes.set_ylabel('y')
-                    self.combined_canvas.axes.set_title(f"Combined {plot_type.capitalize()}")
-                    
-                    if self.legend.isChecked():
-                        self.combined_canvas.axes.legend(loc='upper left', fontsize='small')
-                    
-                    # Apply theme settings
-                    self.apply_plot_theme(self.combined_canvas.axes)
-                    
-                    # Apply axis limits if auto-scale is disabled
-                    self.apply_axis_limits(self.combined_canvas.axes)
-                    
-                    # Draw the plots
-                    self.combined_canvas.draw()
             
             except Exception as e:
                 print(f"Error plotting {plot_type} for function '{expr}': {e}")
+        
+        # Update Combined View (both big and small)
+        for current_canvas in [self.combined_canvas, self.combined_small_canvas]:
+            if plot_type == "functions":
+                for data in all_functions_data:
+                    current_canvas.axes.plot(data[1], data[2], color=data[3], 
+                                          linewidth=2, label=f"f(x) = {data[0]}")
+            elif plot_type == "derivatives":
+                for data in all_derivatives_data:
+                    current_canvas.axes.plot(data[2], data[3], color=data[4], 
+                                          linewidth=2, label=f"f'(x) = {data[1]}")
+            elif plot_type == "integrals":
+                for data in all_integrals_data:
+                    current_canvas.axes.plot(data[2], data[3], color=data[4], 
+                                          linewidth=2, label=f"∫f(x)dx = {data[1]} + C")
+            
+            current_canvas.axes.set_xlabel('x')
+            current_canvas.axes.set_ylabel('y')
+            if self.legend.isChecked():
+                current_canvas.axes.legend(loc='upper left', fontsize='small')
+            self.apply_plot_theme(current_canvas.axes)
+            self.apply_axis_limits(current_canvas.axes)
+            current_canvas.draw()
+        
+        # Update Analysis View (both big and small)
+        for current_canvas in [self.analysis_canvas, self.analysis_small_canvas]:
+            if plot_type == "derivatives":
+                # Plot derivatives and critical points in analysis view
+                for data in all_derivatives_data:
+                    current_canvas.axes.plot(data[2], data[3], color=data[4], 
+                                          linewidth=1.5, linestyle='--', 
+                                          label=f"d/dx({data[0]})")
+                
+                # Plot critical points
+                for point in all_critical_points:
+                    current_canvas.axes.plot(point[1], point[2], 'o', color=point[3], markersize=6)
+                    current_canvas.axes.annotate(f"({point[1]:.2f}, {point[2]:.2f})", 
+                                              (point[1], point[2]), 
+                                              textcoords="offset points", 
+                                              xytext=(0,10), 
+                                              ha='center')
+            
+            current_canvas.axes.set_xlabel('x')
+            current_canvas.axes.set_ylabel('y')
+            if self.legend.isChecked():
+                current_canvas.axes.legend(loc='upper left', fontsize='small')
+            self.apply_plot_theme(current_canvas.axes)
+            self.apply_axis_limits(current_canvas.axes)
+            current_canvas.draw()
     
     def apply_plot_theme(self, ax):
         """Apply the selected theme to a matplotlib axis"""
