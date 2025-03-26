@@ -152,7 +152,7 @@ class GraphingApp(QMainWindow):
         range_layout = QVBoxLayout()
         self.x_min_label = QLabel("X Min:")
         self.x_min_input = QDoubleSpinBox()
-        self.x_min_input.setRange(-1000, 0)
+        self.x_min_input.setRange(-1000, 1000)
         self.x_min_input.setValue(-10)
         self.x_min_input.setSingleStep(0.1)
         self.x_min_input.setDecimals(1)
@@ -161,7 +161,7 @@ class GraphingApp(QMainWindow):
         
         self.x_max_label = QLabel("X Max:")
         self.x_max_input = QDoubleSpinBox()
-        self.x_max_input.setRange(0, 1000)
+        self.x_max_input.setRange(-1000, 1000)
         self.x_max_input.setValue(10)
         self.x_max_input.setSingleStep(0.1)
         self.x_max_input.setDecimals(1)
@@ -198,7 +198,7 @@ class GraphingApp(QMainWindow):
         # Y Range settings
         self.y_min_label = QLabel("Y Min:")
         self.y_min_input = QDoubleSpinBox()
-        self.y_min_input.setRange(-1000, 0)
+        self.y_min_input.setRange(-1000, 1000)
         self.y_min_input.setValue(-10)
         self.y_min_input.setSingleStep(0.1)
         self.y_min_input.setDecimals(1)
@@ -207,7 +207,7 @@ class GraphingApp(QMainWindow):
         
         self.y_max_label = QLabel("Y Max:")
         self.y_max_input = QDoubleSpinBox()
-        self.y_max_input.setRange(0, 1000)
+        self.y_max_input.setRange(-1000, 1000)
         self.y_max_input.setValue(10)
         self.y_max_input.setSingleStep(0.1)
         self.y_max_input.setDecimals(1)
