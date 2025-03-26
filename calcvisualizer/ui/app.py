@@ -461,7 +461,7 @@ class GraphingApp(QMainWindow):
         
         # Initialize with empty plots and show empty graph in Entire View
         self.initialize_plots()
-        self.create_dynamic_canvases([], force_empty=True)  # Show empty graph at startup
+        self.create_dynamic_canvases([], force_empty=True)  
         
     def toggle_y_scale_controls(self, checked):
         """Enable/disable Y scale controls based on auto-scale checkbox"""
@@ -548,8 +548,8 @@ class GraphingApp(QMainWindow):
         container = QWidget()
         container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(10, 10, 10, 10)
-        container_layout.setSpacing(0)
+        container_layout.setContentsMargins(10, 10, 10, 5)
+        container_layout.setSpacing(5)
 
         # Create frame for the canvas
         canvas_frame = QFrame()
@@ -560,7 +560,7 @@ class GraphingApp(QMainWindow):
         canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
 
         # Create empty canvas
-        canvas = MplCanvas(width=14, height=7, dpi=100)
+        canvas = MplCanvas(width=14, height=5, dpi=100)
         canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Set up empty graph with axes
@@ -582,8 +582,7 @@ class GraphingApp(QMainWindow):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet("""
             font-weight: bold; 
-            margin-top: 5px;
-            padding: 0px;
+            margin-top: 20px;
             background-color: rgba(58, 134, 255, 0.1);
             border-radius: 4px;
         """)
@@ -623,7 +622,7 @@ class GraphingApp(QMainWindow):
         canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
 
         # Create canvas with responsive size
-        canvas = MplCanvas(width=14, height=4, dpi=100)
+        canvas = MplCanvas(width=14, height=5, dpi=100)
         canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         # Set up empty graph with axes
@@ -645,7 +644,6 @@ class GraphingApp(QMainWindow):
         label.setStyleSheet("""
             font-weight: bold; 
             margin-top: 5px;
-            padding: 0px;
             background-color: rgba(58, 134, 255, 0.1);
             border-radius: 4px;
         """)
