@@ -400,50 +400,17 @@ class GraphingApp(QMainWindow):
         
         # Individual function tabs
         self.individual_tab = QWidget()
-        individual_layout = QGridLayout(self.individual_tab)
-        
-        # Create individual canvases with responsive sizing
-        self.canvas1 = MplCanvas(width=6, height=6, dpi=100)
-        self.canvas2 = MplCanvas(width=6, height=6, dpi=100)
-        self.canvas3 = MplCanvas(width=6, height=6, dpi=100)
-        
-        # Set size policies for responsive resizing
-        for canvas in [self.canvas1, self.canvas2, self.canvas3]:
-            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            canvas.setMinimumSize(200, 150)
-        
-        # Create frames for each canvas
-        canvas1_frame = QFrame()
-        canvas2_frame = QFrame()
-        canvas3_frame = QFrame()
-        
-        for frame in [canvas1_frame, canvas2_frame, canvas3_frame]:
-            frame.setStyleSheet("""
-                QFrame {
-                    background-color: #3e3e3e;
-                    border-radius: 8px;
-                    border: 1px solid #555;
-                }
-            """)
-            frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        
-        # Add canvases to frames with layouts
-        canvas1_layout = QVBoxLayout(canvas1_frame)
-        canvas2_layout = QVBoxLayout(canvas2_frame)
-        canvas3_layout = QVBoxLayout(canvas3_frame)
-        
-        canvas1_layout.addWidget(self.canvas1)
-        canvas2_layout.addWidget(self.canvas2)
-        canvas3_layout.addWidget(self.canvas3)
-        
-        # Add frames to grid layout with proper spacing
-        individual_layout.addWidget(canvas1_frame, 0, 0)
-        individual_layout.addWidget(canvas2_frame, 0, 1)
-        individual_layout.addWidget(canvas3_frame, 1, 0)
-        
-        # Set layout spacing and margins
-        individual_layout.setSpacing(10)
-        individual_layout.setContentsMargins(10, 10, 10, 10)
+        individual_layout = QVBoxLayout(self.individual_tab)
+        individual_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Create a container widget for the graphs
+        self.individual_graphs_container = QWidget()
+        self.individual_graphs_layout = QGridLayout(self.individual_graphs_container)
+        self.individual_graphs_layout.setSpacing(10)
+        individual_layout.addWidget(self.individual_graphs_container)
+
+        # Create initial empty graph
+        self.create_empty_individual_graph()
         
         # Combined tab
         self.combined_tab = QWidget()
@@ -484,6 +451,11 @@ class GraphingApp(QMainWindow):
         self.update_visibility_button.clicked.connect(self.plot_all_graphs)
         self.auto_scale_y.toggled.connect(self.toggle_y_scale_controls)
         
+        # Initialize canvas references as None
+        self.canvas1 = None
+        self.canvas2 = None
+        self.canvas3 = None
+        
         # Initialize visibility and function list
         self.function_visibility = {}
         
@@ -501,13 +473,25 @@ class GraphingApp(QMainWindow):
     
     def initialize_plots(self):
         """Initialize empty plots with grids and labels"""
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
-                      self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
-            canvas.axes.clear()
-            canvas.axes.grid(True, linestyle='--', alpha=0.7)
-            canvas.axes.set_xlabel('x')
-            canvas.axes.set_ylabel('y')
-            canvas.draw()
+        # Only initialize canvases that exist
+        canvases = [self.combined_canvas, self.analysis_canvas, 
+                    self.combined_small_canvas, self.analysis_small_canvas]
+        
+        # Add individual canvases if they exist
+        if self.canvas1:
+            canvases.append(self.canvas1)
+        if self.canvas2:
+            canvases.append(self.canvas2)
+        if self.canvas3:
+            canvases.append(self.canvas3)
+        
+        for canvas in canvases:
+            if canvas:  # Check if canvas exists
+                canvas.axes.clear()
+                canvas.axes.grid(True, linestyle='--', alpha=0.7)
+                canvas.axes.set_xlabel('x')
+                canvas.axes.set_ylabel('y')
+                canvas.draw()
     
     def create_dynamic_canvases(self, expressions, force_empty=False):
         """Create canvases dynamically based on the number of functions"""
@@ -748,23 +732,38 @@ class GraphingApp(QMainWindow):
     def plot_all_graphs(self):
         """Plot all graphs: individual functions, combined view, and analysis"""
         expressions = [expr.strip() for expr in self.function_input.text().split(",") if expr.strip()]
+        
+        # Create x range from user inputs
         x_min = self.x_min_input.value()
         x_max = self.x_max_input.value()
         resolution = self.resolution_slider.value()
-        
         x_range = np.linspace(x_min, x_max, resolution)
-        x = symbols('x')
+        x = symbols('x')  # Define symbolic x variable
+        
+        # Update individual tab layout first to create canvases
+        self.update_individual_tab_layout(expressions)
         
         # Create dynamic canvases for the Entire View tab
         self.create_dynamic_canvases(expressions)
         
         # Clear all canvases and apply theme
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
-                      self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
-            canvas.axes.clear()
-            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-            self.set_y_scale(canvas.axes)
-            self.apply_plot_theme(canvas.axes)  # Apply theme to each canvas
+        canvases = [self.combined_canvas, self.analysis_canvas, 
+                    self.combined_small_canvas, self.analysis_small_canvas]
+        
+        # Add individual canvases if they exist
+        if self.canvas1:
+            canvases.append(self.canvas1)
+        if self.canvas2:
+            canvases.append(self.canvas2)
+        if self.canvas3:
+            canvases.append(self.canvas3)
+        
+        for canvas in canvases:
+            if canvas:  # Check if canvas exists
+                canvas.axes.clear()
+                canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                self.set_y_scale(canvas.axes)
+                self.apply_plot_theme(canvas.axes)
         
         # Clear the function canvases and apply theme
         for canvas in self.function_canvases:
@@ -971,27 +970,38 @@ class GraphingApp(QMainWindow):
     def plot_specific(self, plot_type):
         """Plot specific graph types (functions, derivatives, or integrals)"""
         expressions = [expr.strip() for expr in self.function_input.text().split(",") if expr.strip()]
+        
+        # Create x range from user inputs
         x_min = self.x_min_input.value()
         x_max = self.x_max_input.value()
         resolution = self.resolution_slider.value()
-        
         x_range = np.linspace(x_min, x_max, resolution)
-        x = symbols('x')
+        x = symbols('x')  # Define symbolic x variable
         
-        # Clear canvases and apply theme
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas]:
-            canvas.axes.clear()
-            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-            self.set_y_scale(canvas.axes)
-            self.apply_plot_theme(canvas.axes)  # Apply theme to each canvas
+        # Update individual tab layout first to create canvases
+        self.update_individual_tab_layout(expressions)
         
         # Create dynamic canvases for the Entire View tab
         self.create_dynamic_canvases(expressions)
         
-        # Apply theme to all dynamic canvases
-        for canvas in self.function_canvases:
-            self.apply_plot_theme(canvas.axes)
+        # Clear canvases and apply theme
+        canvases = [self.combined_canvas]
         
+        # Add individual canvases if they exist
+        if self.canvas1:
+            canvases.append(self.canvas1)
+        if self.canvas2:
+            canvases.append(self.canvas2)
+        if self.canvas3:
+            canvases.append(self.canvas3)
+        
+        for canvas in canvases:
+            if canvas:  # Check if canvas exists
+                canvas.axes.clear()
+                canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                self.set_y_scale(canvas.axes)
+                self.apply_plot_theme(canvas.axes)
+
         # Colors for different functions
         colors = ['#3a86ff', '#ff3a5e', '#38b000', '#fcbf49', '#9d4edd', 
                  '#f72585', '#4cc9f0', '#fb8500', '#0077b6', '#7209b7']
@@ -1205,14 +1215,28 @@ class GraphingApp(QMainWindow):
     def clear_plots(self):
         """Clear all plots and reset to default state"""
         # Clear all regular canvases
-        for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
-                      self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
-            canvas.axes.clear()
-            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-            canvas.axes.set_xlabel('x')
-            canvas.axes.set_ylabel('y')
-            self.apply_plot_theme(canvas.axes)
-            canvas.draw()
+        canvases = [self.combined_canvas, self.analysis_canvas, 
+                    self.combined_small_canvas, self.analysis_small_canvas]
+        
+        # Add individual canvases if they exist
+        if self.canvas1:
+            canvases.append(self.canvas1)
+        if self.canvas2:
+            canvases.append(self.canvas2)
+        if self.canvas3:
+            canvases.append(self.canvas3)
+        
+        for canvas in canvases:
+            if canvas:  # Check if canvas exists
+                canvas.axes.clear()
+                canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                canvas.axes.set_xlabel('x')
+                canvas.axes.set_ylabel('y')
+                self.apply_plot_theme(canvas.axes)
+                canvas.draw()
+        
+        # Reset the individual tab to show single empty graph
+        self.create_empty_individual_graph()
         
         # Reset the top layout to show single empty graph
         self.create_dynamic_canvases([], force_empty=True)
@@ -1322,4 +1346,176 @@ class GraphingApp(QMainWindow):
         except Exception as e:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Error saving plots: {e}")
+
+    def create_empty_individual_graph(self):
+        """Create a single empty graph for the Individual Functions tab"""
+        # Clear existing layout
+        while self.individual_graphs_layout.count():
+            item = self.individual_graphs_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Create container for the empty graph
+        container = QWidget()
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(10, 10, 10, 10)
+        container_layout.setSpacing(0)
+
+        # Create frame for the canvas
+        canvas_frame = QFrame()
+        canvas_frame.setMinimumSize(400, 300)
+        canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        canvas_frame_layout = QVBoxLayout(canvas_frame)
+        canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create empty canvas
+        canvas = MplCanvas(width=8, height=6, dpi=100)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+        # Set up empty graph with axes
+        canvas.axes.clear()
+        canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+        canvas.axes.set_xlabel('x')
+        canvas.axes.set_ylabel('y')
+        self.apply_plot_theme(canvas.axes)
+        canvas.draw()
+
+        canvas_frame_layout.addWidget(canvas)
+
+        # Add canvas frame to container
+        container_layout.addWidget(canvas_frame)
+
+        # Add label
+        label = QLabel("No functions to plot")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setStyleSheet("""
+            font-weight: bold; 
+            margin-top: 5px;
+            padding: 5px;
+            background-color: rgba(58, 134, 255, 0.1);
+            border-radius: 4px;
+        """)
+        container_layout.addWidget(label)
+
+        # Create a frame for the container
+        frame = QFrame()
+        frame.setStyleSheet("""
+            QFrame {
+                background-color: #3e3e3e;
+                border-radius: 8px;
+                border: 1px solid #555;
+            }
+        """)
+        frame.setLayout(container_layout)
+        frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # Add to layout centered
+        self.individual_graphs_layout.addWidget(frame, 0, 0, 1, 1)
+
+    def update_individual_tab_layout(self, expressions):
+        """Update the Individual Functions tab layout based on number of functions"""
+        # Clear existing layout
+        while self.individual_graphs_layout.count():
+            item = self.individual_graphs_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        if not expressions:
+            self.create_empty_individual_graph()
+            return
+
+        num_functions = len(expressions)
+        
+        if num_functions == 1:
+            # Single function: 1 row, 1 column
+            rows, cols = 1, 1
+        elif num_functions == 2:
+            # Two functions: 2 rows, 1 column
+            rows, cols = 2, 1
+        else:
+            # Three functions: 2 rows, 2 columns (top 1 column, bottom centered)
+            rows, cols = 2, 2
+
+        # Create and add frames for each function
+        for i, expr in enumerate(expressions):
+            if i >= 3:  # Only handle up to 3 functions
+                break
+
+            container = QWidget()
+            container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            container_layout = QVBoxLayout(container)
+            container_layout.setContentsMargins(10, 10, 10, 10)
+            container_layout.setSpacing(0)
+
+            # Create frame for canvas
+            canvas_frame = QFrame()
+            canvas_frame.setMinimumSize(300, 250)
+            canvas_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas_frame_layout = QVBoxLayout(canvas_frame)
+            canvas_frame_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Create canvas
+            canvas = MplCanvas(width=8, height=6, dpi=100)
+            canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            canvas_frame_layout.addWidget(canvas)
+
+            # Store canvas reference
+            if i == 0:
+                self.canvas1 = canvas
+            elif i == 1:
+                self.canvas2 = canvas
+            elif i == 2:
+                self.canvas3 = canvas
+
+            container_layout.addWidget(canvas_frame)
+
+            # Add label
+            label = QLabel(f"Function {i+1}: {expr}")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet("""
+                font-weight: bold; 
+                margin-top: 5px;
+                padding: 5px;
+                background-color: rgba(58, 134, 255, 0.1);
+                border-radius: 4px;
+            """)
+            container_layout.addWidget(label)
+
+            # Create a frame for the container
+            frame = QFrame()
+            frame.setStyleSheet("""
+                QFrame {
+                    background-color: #3e3e3e;
+                    border-radius: 8px;
+                    border: 1px solid #555;
+                }
+            """)
+            frame.setLayout(container_layout)
+            frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+            # Calculate position in grid
+            if num_functions <= 2:
+                # For 1 or 2 functions, stack vertically
+                row = i
+                col = 0
+                rowspan = 1
+                colspan = 1
+            else:
+                # For 3 functions, first one on top, two below
+                if i == 0:
+                    row = 0
+                    col = 0
+                    rowspan = 1
+                    colspan = 2
+                else:
+                    row = 1
+                    col = i - 1
+                    rowspan = 1
+                    colspan = 1
+
+            self.individual_graphs_layout.addWidget(frame, row, col, rowspan, colspan)
+
+        # Set alignment for the grid layout
+        self.individual_graphs_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
