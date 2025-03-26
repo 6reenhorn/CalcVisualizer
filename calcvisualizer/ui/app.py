@@ -151,51 +151,78 @@ class GraphingApp(QMainWindow):
         # X Range settings
         range_layout = QGridLayout()
         self.x_min_label = QLabel("X Min:")
-        self.x_min_input = QSpinBox()
-        self.x_min_input.setRange(-100, 0)
+        self.x_min_input = QDoubleSpinBox()
+        self.x_min_input.setRange(-1000, 0)
         self.x_min_input.setValue(-10)
+        self.x_min_input.setSingleStep(0.1)
+        self.x_min_input.setDecimals(1)
+        self.x_min_input.setKeyboardTracking(False)
+        self.x_min_input.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         
         self.x_max_label = QLabel("X Max:")
-        self.x_max_input = QSpinBox()
-        self.x_max_input.setRange(0, 100)
+        self.x_max_input = QDoubleSpinBox()
+        self.x_max_input.setRange(0, 1000)
         self.x_max_input.setValue(10)
+        self.x_max_input.setSingleStep(0.1)
+        self.x_max_input.setDecimals(1)
+        self.x_max_input.setKeyboardTracking(False)
+        self.x_max_input.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         
-        range_layout.addWidget(self.x_min_label, 0, 0)
-        range_layout.addWidget(self.x_min_input, 0, 1)
-        range_layout.addWidget(self.x_max_label, 0, 2)
-        range_layout.addWidget(self.x_max_input, 0, 3)
+        # Add buttons for quick increment/decrement
+        x_min_buttons = QHBoxLayout()
+        x_min_dec = QPushButton("-")
+        x_min_dec.setFixedSize(20, 20)
+        x_min_inc = QPushButton("+")
+        x_min_inc.setFixedSize(20, 20)
+        x_min_buttons.addWidget(x_min_dec)
+        x_min_buttons.addWidget(x_min_inc)
         
-        # Y Range settings (new)
+        x_max_buttons = QHBoxLayout()
+        x_max_dec = QPushButton("-")
+        x_max_dec.setFixedSize(20, 20)
+        x_max_inc = QPushButton("+")
+        x_max_inc.setFixedSize(20, 20)
+        x_max_buttons.addWidget(x_max_dec)
+        x_max_buttons.addWidget(x_max_inc)
+        
+        # Y Range settings
         self.y_min_label = QLabel("Y Min:")
         self.y_min_input = QDoubleSpinBox()
         self.y_min_input.setRange(-1000, 0)
         self.y_min_input.setValue(-10)
+        self.y_min_input.setSingleStep(0.1)
         self.y_min_input.setDecimals(1)
+        self.y_min_input.setKeyboardTracking(False)
+        self.y_min_input.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         
         self.y_max_label = QLabel("Y Max:")
         self.y_max_input = QDoubleSpinBox()
         self.y_max_input.setRange(0, 1000)
         self.y_max_input.setValue(10)
+        self.y_max_input.setSingleStep(0.1)
         self.y_max_input.setDecimals(1)
+        self.y_max_input.setKeyboardTracking(False)
+        self.y_max_input.setStepType(QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
         
-        self.auto_scale_y = QCheckBox("Auto-scale Y")
-        self.auto_scale_y.setChecked(True)
+        # Add buttons for Y range
+        y_min_buttons = QHBoxLayout()
+        y_min_dec = QPushButton("-")
+        y_min_dec.setFixedSize(20, 20)
+        y_min_inc = QPushButton("+")
+        y_min_inc.setFixedSize(20, 20)
+        y_min_buttons.addWidget(y_min_dec)
+        y_min_buttons.addWidget(y_min_inc)
         
-        range_layout.addWidget(self.y_min_label, 1, 0)
-        range_layout.addWidget(self.y_min_input, 1, 1)
-        range_layout.addWidget(self.y_max_label, 1, 2)
-        range_layout.addWidget(self.y_max_input, 1, 3)
-        range_layout.addWidget(self.auto_scale_y, 2, 0, 1, 4)
-        
-        # Y scale options (new)
-        self.y_scale_label = QLabel("Y Scale:")
-        self.y_scale_combo = QComboBox()
-        self.y_scale_combo.addItems(["Linear", "Logarithmic", "Symmetric Log"])
-        
-        range_layout.addWidget(self.y_scale_label, 3, 0)
-        range_layout.addWidget(self.y_scale_combo, 3, 1, 1, 3)
+        y_max_buttons = QHBoxLayout()
+        y_max_dec = QPushButton("-")
+        y_max_dec.setFixedSize(20, 20)
+        y_max_inc = QPushButton("+")
+        y_max_inc.setFixedSize(20, 20)
+        y_max_buttons.addWidget(y_max_dec)
+        y_max_buttons.addWidget(y_max_inc)
         
         # Resolution settings
+        resolution_layout = QHBoxLayout()
         self.resolution_label = QLabel("Resolution:")
         self.resolution_slider = QSlider(Qt.Orientation.Horizontal)
         self.resolution_slider.setRange(100, 1000)
@@ -203,10 +230,70 @@ class GraphingApp(QMainWindow):
         self.resolution_slider.setTickInterval(100)
         self.resolution_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
         self.resolution_value = QLabel("400 points")
+
+        resolution_layout.addWidget(self.resolution_label)
+        resolution_layout.addWidget(self.resolution_slider)
+        resolution_layout.addWidget(self.resolution_value)
+
+        # Connect resolution slider signal
+        self.resolution_slider.valueChanged.connect(self.update_resolution_label)
+
+        # Add resolution layout to range_layout
+        range_layout.addWidget(self.resolution_label, 2, 0)
+        range_layout.addWidget(self.resolution_slider, 2, 1, 1, 4)
+        range_layout.addWidget(self.resolution_value, 2, 5)
         
-        range_layout.addWidget(self.resolution_label, 4, 0)
-        range_layout.addWidget(self.resolution_slider, 4, 1, 1, 2)
-        range_layout.addWidget(self.resolution_value, 4, 3)
+        # Add widgets to layout
+        range_layout.addWidget(self.x_min_label, 0, 0)
+        range_layout.addWidget(self.x_min_input, 0, 1)
+        range_layout.addLayout(x_min_buttons, 0, 2)
+        range_layout.addWidget(self.x_max_label, 0, 3)
+        range_layout.addWidget(self.x_max_input, 0, 4)
+        range_layout.addLayout(x_max_buttons, 0, 5)
+        
+        range_layout.addWidget(self.y_min_label, 1, 0)
+        range_layout.addWidget(self.y_min_input, 1, 1)
+        range_layout.addLayout(y_min_buttons, 1, 2)
+        range_layout.addWidget(self.y_max_label, 1, 3)
+        range_layout.addWidget(self.y_max_input, 1, 4)
+        range_layout.addLayout(y_max_buttons, 1, 5)
+        
+        # Style the increment/decrement buttons
+        small_button_style = """
+        QPushButton {
+            background-color: #3a86ff;
+            color: white;
+            border: none;
+            border-radius: 2px;
+            padding: 0px;
+            font-weight: bold;
+            font-size: 12px;
+            min-width: 20px;
+            min-height: 20px;
+        }
+        QPushButton:hover {
+            background-color: #4a94ff;
+        }
+        QPushButton:pressed {
+            background-color: #2a76ef;
+        }
+        """
+        
+        for button in [x_min_dec, x_min_inc, x_max_dec, x_max_inc,
+                       y_min_dec, y_min_inc, y_max_dec, y_max_inc]:
+            button.setStyleSheet(small_button_style)
+        
+        # Connect button signals with different incrementation
+        # Inner buttons (with smaller blue buttons) increment/decrement by 0.1
+        x_min_dec.clicked.connect(lambda: self.x_min_input.setValue(self.x_min_input.value() - 0.1))
+        x_min_inc.clicked.connect(lambda: self.x_min_input.setValue(self.x_min_input.value() + 0.1))
+        x_max_dec.clicked.connect(lambda: self.x_max_input.setValue(self.x_max_input.value() - 0.1))
+        x_max_inc.clicked.connect(lambda: self.x_max_input.setValue(self.x_max_input.value() + 0.1))
+        
+        y_min_dec.clicked.connect(lambda: self.y_min_input.setValue(self.y_min_input.value() - 0.1))
+        y_min_inc.clicked.connect(lambda: self.y_min_input.setValue(self.y_min_input.value() + 0.1))
+        y_max_dec.clicked.connect(lambda: self.y_max_input.setValue(self.y_max_input.value() - 0.1))
+        y_max_inc.clicked.connect(lambda: self.y_max_input.setValue(self.y_max_input.value() + 0.1))
         
         function_layout.addLayout(range_layout)
         left_layout.addWidget(function_group)
@@ -245,11 +332,24 @@ class GraphingApp(QMainWindow):
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(["Default", "Dark", "Seaborn", "Science", "High Contrast"])
         
-        style_layout.addWidget(self.grid_lines, 0, 0)
-        style_layout.addWidget(self.legend, 0, 1)
-        style_layout.addWidget(self.normalize, 1, 0)
-        style_layout.addWidget(self.theme_label, 2, 0)
-        style_layout.addWidget(self.theme_combo, 2, 1)
+        # Add Y-scale options
+        self.y_scale_label = QLabel("Y-Scale:")
+        self.y_scale_combo = QComboBox()
+        self.y_scale_combo.addItems(["Linear", "Logarithmic", "Symmetric Log"])
+
+        self.auto_scale_y = QCheckBox("Auto Y Scale")
+        self.auto_scale_y.setChecked(True)
+        self.auto_scale_y.stateChanged.connect(self.toggle_y_scale_controls)
+
+        # Update the style_layout to include the new widgets
+        style_layout.addWidget(self.y_scale_label, 0, 0)
+        style_layout.addWidget(self.y_scale_combo, 0, 1)
+        style_layout.addWidget(self.auto_scale_y, 1, 0)
+        style_layout.addWidget(self.grid_lines, 2, 0)
+        style_layout.addWidget(self.legend, 2, 1)
+        style_layout.addWidget(self.normalize, 3, 0)
+        style_layout.addWidget(self.theme_label, 4, 0)
+        style_layout.addWidget(self.theme_combo, 4, 1)
         
         viz_layout.addLayout(style_layout)
         left_layout.addWidget(viz_group)
@@ -274,9 +374,41 @@ class GraphingApp(QMainWindow):
         self.plot_derivative_button = QPushButton("Plot Derivatives")
         self.plot_integral_button = QPushButton("Plot Integrals")
         self.clear_button = QPushButton("Clear All")
-        self.clear_button.setStyleSheet("background-color: #ff3a5e;")
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #ff3a5e;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 16px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #ff4a6e;
+            }
+            QPushButton:pressed {
+                background-color: #ff2a4e;
+            }
+        """)
         self.save_button = QPushButton("Save Plots")
-        self.save_button.setStyleSheet("background-color: #38b000;")
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                background-color: #38b000;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 16px;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #48c010;
+            }
+            QPushButton:pressed {
+                background-color: #289000;
+            }
+        """)
         
         button_layout.addWidget(self.plot_all_button, 0, 0, 1, 2)
         button_layout.addWidget(self.plot_function_button, 1, 0)
@@ -447,9 +579,7 @@ class GraphingApp(QMainWindow):
         self.plot_integral_button.clicked.connect(lambda: self.plot_specific("integrals"))
         self.clear_button.clicked.connect(self.clear_plots)
         self.save_button.clicked.connect(self.save_plots)
-        self.resolution_slider.valueChanged.connect(self.update_resolution_label)
         self.update_visibility_button.clicked.connect(self.plot_all_graphs)
-        self.auto_scale_y.toggled.connect(self.toggle_y_scale_controls)
         
         # Initialize canvas references as None
         self.canvas1 = None
