@@ -13,7 +13,6 @@ class MplCanvas(FigureCanvas):
     def isDeleted(self):
         """Check if the canvas has been deleted"""
         try:
-            # Try to access a property that would raise an error if object is deleted
             self.size()
             return False
         except RuntimeError:

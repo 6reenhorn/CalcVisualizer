@@ -610,8 +610,8 @@ class GraphingApp(QMainWindow):
         container = QWidget()
         container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(10, 10, 10, 10)
-        container_layout.setSpacing(0)
+        container_layout.setContentsMargins(10, 10, 10, 5)
+        container_layout.setSpacing(5)
 
         # Create frame for the canvas
         canvas_frame = QFrame()
@@ -643,7 +643,7 @@ class GraphingApp(QMainWindow):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet("""
             font-weight: bold; 
-            margin-top: 5px;
+            margin-top: 20px;
             background-color: rgba(58, 134, 255, 0.1);
             border-radius: 4px;
         """)
@@ -701,7 +701,16 @@ class GraphingApp(QMainWindow):
         
         try:
             parsed_expr = sympify(expression.strip(), locals=math_functions)
-            return parsed_expr, lambdify(x, parsed_expr, 'numpy')
+            print(f"User Input: {expression} -> Parsed Expression: {parsed_expr}")
+
+            numpy_functions = {
+                "sin": np.sin, "cos": np.cos, "exp": np.exp, "log": np.log,
+                "tan": lambda x: np.sin(x) / np.cos(x),  
+                "sqrt": lambda x: np.sqrt(np.maximum(x, 0)),  
+                "pi": np.pi
+            }
+
+            return parsed_expr, lambdify(x, parsed_expr, modules=["numpy", numpy_functions])
         except Exception as e:
             print(f"Error parsing expression '{expression}': {e}")
             return None, None
@@ -841,15 +850,30 @@ class GraphingApp(QMainWindow):
                         d2_values = None
                 
                 # Calculate integral
-                integral_expr = integrate(parsed_expr, x)
-                integral_func = lambdify(x, integral_expr, 'numpy')
-                int_values = integral_func(x_range)
-                int_values = np.nan_to_num(int_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                
-                if self.normalize.isChecked():
-                    int_max = max(abs(np.max(int_values)), abs(np.min(int_values)))
-                    if int_max > 0:
-                        int_values = int_values / int_max
+                try:
+                    integral_expr = integrate(parsed_expr, x)
+                    integral_func = lambdify(x, integral_expr, 'numpy')
+                    int_values = integral_func(x_range)
+                    
+                    # Handle special cases for functions like tan(x)
+                    if 'log' in str(integral_expr):
+                        # Add a small epsilon to avoid log(0)
+                        int_values = np.where(np.isfinite(int_values), int_values, np.nan)
+                        # Interpolate NaN values
+                        mask = np.isnan(int_values)
+                        int_values[mask] = np.interp(x_range[mask], x_range[~mask], int_values[~mask])
+                    
+                    int_values = np.nan_to_num(int_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                    
+                    if self.normalize.isChecked():
+                        int_max = max(abs(np.max(int_values)), abs(np.min(int_values)))
+                        if int_max > 0:
+                            int_values = int_values / int_max
+                            
+                except Exception as e:
+                    print(f"Error calculating integral for '{expr}': {e}")
+                    int_values = None
+                    integral_expr = "undefined"
                 
                 # Store data for entire view
                 all_functions_data.append((expr, x_range, y_values, colors[i % len(colors)]))
@@ -892,7 +916,7 @@ class GraphingApp(QMainWindow):
                                                    linewidth=1, linestyle='-.', 
                                                    label=f"f''(x) = {second_derivative_expr}")
                         
-                        if self.show_integral.isChecked():
+                        if self.show_integral.isChecked() and int_values is not None:
                             current_canvas.axes.plot(x_range, int_values, color=colors[i % len(colors)], 
                                                    linewidth=1.5, linestyle=':', 
                                                    label=f"∫f(x)dx = {integral_expr} + C")
@@ -1077,7 +1101,17 @@ class GraphingApp(QMainWindow):
                     integral_expr = integrate(parsed_expr, x)
                     integral_func = lambdify(x, integral_expr, 'numpy')
                     int_values = integral_func(x_range)
+                    
+                    # Handle special cases for functions like tan(x)
+                    if 'log' in str(integral_expr):
+                        # Add a small epsilon to avoid log(0)
+                        int_values = np.where(np.isfinite(int_values), int_values, np.nan)
+                        # Interpolate NaN values
+                        mask = np.isnan(int_values)
+                        int_values[mask] = np.interp(x_range[mask], x_range[~mask], int_values[~mask])
+                    
                     int_values = np.nan_to_num(int_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                    
                     if self.normalize.isChecked():
                         int_max = max(abs(np.max(int_values)), abs(np.min(int_values)))
                         if int_max > 0:
