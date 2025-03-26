@@ -560,7 +560,7 @@ class GraphingApp(QMainWindow):
         self.entire_top_scrollcontent.adjustSize()
 
     def create_empty_graph_frame(self):
-        # Extract the frame creation logic for empty graph from the original method
+        """Create a frame with an empty graph"""
         container = QWidget()
         container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         container_layout = QVBoxLayout(container)
@@ -594,17 +594,17 @@ class GraphingApp(QMainWindow):
         container_layout.addWidget(canvas_frame)
 
         # Add label with word wrap
-        label = QLabel("No functions to plot.")
+        label = QLabel("No functions to plot")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         label.setStyleSheet("""
-                font-weight: bold; 
-                margin-top: 5px;
-                padding: 5px;
-                background-color: rgba(58, 134, 255, 0.1);
-                border-radius: 4px;
+            font-weight: bold; 
+            margin-top: 5px;
+            padding: 5px;
+            background-color: rgba(58, 134, 255, 0.1);
+            border-radius: 4px;
         """)
         label.setWordWrap(True)
+        label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         container_layout.addWidget(label)
 
         # Create a frame for the container
@@ -1204,21 +1204,26 @@ class GraphingApp(QMainWindow):
     
     def clear_plots(self):
         """Clear all plots and reset to default state"""
+        # Clear all regular canvases
         for canvas in [self.canvas1, self.canvas2, self.canvas3, self.combined_canvas, 
                       self.analysis_canvas, self.combined_small_canvas, self.analysis_small_canvas]:
             canvas.axes.clear()
             canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
             canvas.axes.set_xlabel('x')
             canvas.axes.set_ylabel('y')
+            self.apply_plot_theme(canvas.axes)
             canvas.draw()
         
-        # Clear function canvases too
-        for canvas in self.function_canvases:
-            canvas.axes.clear()
-            canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
-            canvas.axes.set_xlabel('x')
-            canvas.axes.set_ylabel('y')
-            canvas.draw()
+        # Reset the top layout to show single empty graph
+        self.create_dynamic_canvases([], force_empty=True)
+        
+        # Clear function visibility checkboxes
+        while self.function_visibility_checkboxes:
+            checkbox = self.function_visibility_checkboxes.pop()
+            checkbox.setParent(None)
+        
+        # Reset function visibility dictionary
+        self.function_visibility = {}
     
     def save_plots(self):
         """Save plots with customizable options"""
