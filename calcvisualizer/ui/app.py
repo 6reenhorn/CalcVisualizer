@@ -827,13 +827,20 @@ class GraphingApp(QMainWindow):
                 if self.show_second_derivative.isChecked():
                     second_derivative_expr = diff(derivative_expr, x)
                     second_derivative_func = lambdify(x, second_derivative_expr, 'numpy')
-                    d2_values = second_derivative_func(x_range)
-                    d2_values = np.nan_to_num(d2_values, nan=0.0, posinf=1e10, neginf=-1e10)
-                    
-                    if self.normalize.isChecked():
-                        d2_max = max(abs(np.max(d2_values)), abs(np.min(d2_values)))
-                        if d2_max > 0:
-                            d2_values = d2_values / d2_max
+                    try:
+                        d2_values = second_derivative_func(x_range)
+                        # Handle scalar output by converting to array
+                        if not isinstance(d2_values, np.ndarray):
+                            d2_values = np.full_like(x_range, d2_values)
+                        d2_values = np.nan_to_num(d2_values, nan=0.0, posinf=1e10, neginf=-1e10)
+                        
+                        if self.normalize.isChecked():
+                            d2_max = max(abs(np.max(d2_values)), abs(np.min(d2_values)))
+                            if d2_max > 0:
+                                d2_values = d2_values / d2_max
+                    except Exception as e:
+                        print(f"Error calculating second derivative for '{expr}': {e}")
+                        d2_values = None
                 
                 # Calculate integral
                 integral_expr = integrate(parsed_expr, x)
@@ -882,7 +889,7 @@ class GraphingApp(QMainWindow):
                                                    linewidth=1.5, linestyle='--', 
                                                    label=f"f'(x) = {derivative_expr}")
                         
-                        if self.show_second_derivative.isChecked():
+                        if self.show_second_derivative.isChecked() and d2_values is not None:
                             current_canvas.axes.plot(x_range, d2_values, color=colors[i % len(colors)], 
                                                    linewidth=1, linestyle='-.', 
                                                    label=f"f''(x) = {second_derivative_expr}")
