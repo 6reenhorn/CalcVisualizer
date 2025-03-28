@@ -144,7 +144,7 @@ class GraphingApp(QMainWindow):
         self.function_label = QLabel("Enter functions (comma-separated):")
         self.function_input = QLineEdit("x**2 + 3*x + 5, sin(x), exp(x)")
         self.function_input.setPlaceholderText("e.g., x**2 + 3*x + 5, sin(x), exp(x)")
-        
+            
         function_layout.addWidget(self.function_label)
         function_layout.addWidget(self.function_input)
         
