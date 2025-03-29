@@ -10,13 +10,10 @@ class LoadingScreen(QWidget):
         super().__init__()
         self.setFixedSize(300, 200)
         
-        # Remove window title and frame
+        # Remove window title and frame & Translucent background
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        
-        # Enable transparency for the window
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         
-        # Create a frame for the content with rounded corners
         self.frame = QFrame(self)
         self.frame.setStyleSheet("""
             QFrame#mainFrame {
@@ -92,7 +89,7 @@ def main():
         window.showMaximized()
         loading_screen.close()
     
-    QTimer.singleShot(3000, finish_loading)
+    QTimer.singleShot(5000, finish_loading)
 
     sys.exit(app.exec())
 
