@@ -9,9 +9,11 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                            QSpinBox, QComboBox, QCheckBox, QSplitter, QScrollArea, QFrame,
                            QTabWidget, QFileDialog, QMessageBox, QDoubleSpinBox, QSizePolicy,)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from calcvisualizer.ui.canvas import MplCanvas
+
 
 class GraphingApp(QMainWindow):
     def __init__(self):
@@ -115,7 +117,7 @@ class GraphingApp(QMainWindow):
         """)
 
         self.setWindowTitle("Calculus-Powered Graphing App")
-        
+        self.setWindowIcon(QIcon())
         self.setMinimumSize(1200, 800)
 
         # Main widget
