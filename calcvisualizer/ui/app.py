@@ -115,6 +115,7 @@ class GraphingApp(QMainWindow):
         """)
 
         self.setWindowTitle("Calculus-Powered Graphing App")
+        
         self.setMinimumSize(1200, 800)
 
         # Main widget
