@@ -13,7 +13,7 @@ from PyQt6.QtGui import QIcon
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from calcvisualizer.ui.canvas import MplCanvas
-
+from assets.assets import WINDOW_ICON
 
 class GraphingApp(QMainWindow):
     def __init__(self):
@@ -117,7 +117,7 @@ class GraphingApp(QMainWindow):
         """)
 
         self.setWindowTitle("Calculus-Powered Graphing App")
-        self.setWindowIcon(QIcon())
+        self.setWindowIcon(QIcon(WINDOW_ICON))
         self.setMinimumSize(1200, 800)
 
         # Main widget
