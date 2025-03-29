@@ -1,9 +1,9 @@
 from calcvisualizer.ui.app import GraphingApp
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QFrame
-from PyQt6.QtGui import QMovie
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QFrame
+from PyQt6.QtGui import QMovie, QPixmap
+from PyQt6.QtCore import Qt, QTimer, QSize
 import sys
-from assets.assets import LOADING_ICON
+from assets.assets import LOADING_ICON, WINDOW_ICON
 
 class LoadingScreen(QWidget):
     def __init__(self):
@@ -19,12 +19,19 @@ class LoadingScreen(QWidget):
         # Create a frame for the content with rounded corners
         self.frame = QFrame(self)
         self.frame.setStyleSheet("""
-            QFrame {
-                background-color: white;
+            QFrame#mainFrame {
+                background-color: #3e3e3e;
                 border-radius: 10px;
                 color: black;
+                border: 5px double #3e3e3e;
+            }
+            QLabel {
+                border: none;
+                background-color: transparent;
+                color: #cfcfcf;
             }
         """)
+        self.frame.setObjectName("mainFrame") 
         
         # Setup the main layout
         main_layout = QVBoxLayout(self)
@@ -33,29 +40,43 @@ class LoadingScreen(QWidget):
         
         # Create frame layout
         frame_layout = QVBoxLayout(self.frame)
-        frame_layout.setSpacing(15)
+        frame_layout.setSpacing(5)
+        
+        # Create a custom image label for the top
+        self.image_label = QLabel()
+        self.image_label.setPixmap(QPixmap(WINDOW_ICON))
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter)
+        
+        # Create horizontal layout for GIF and text
+        horizontal_layout = QHBoxLayout()
         
         # Create label for GIF
         self.label = QLabel()
-        self.movie = QMovie(LOADING_ICON)  
+        self.movie = QMovie(LOADING_ICON)
+        self.movie.setScaledSize(QSize(30, 30))
         self.label.setMovie(self.movie)
         self.movie.start()
         
         # Add loading text
         self.loading_text = QLabel("Loading application...")
-        self.loading_text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         self.loading_text.setStyleSheet("font-size: 14px; font-weight: bold;")
         
-        # Add widgets to layout
-        frame_layout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter)
-        frame_layout.addWidget(self.loading_text, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        # Add GIF and text to horizontal layout
+        horizontal_layout.addWidget(self.label)
+        horizontal_layout.addWidget(self.loading_text)
+        horizontal_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        horizontal_layout.setSpacing(10)
+        
+        # Add widgets to frame layout
+        frame_layout.addWidget(self.image_label)
+        frame_layout.addLayout(horizontal_layout)
         
         self.center_on_screen()
     
     def center_on_screen(self):
         screen = QApplication.primaryScreen().geometry()
         x = (screen.width() - self.width()) // 2
-        y = (screen.height() - self.height()) // 2
+        y = (screen.height() - self.height()) // 2 - 50
         self.move(x, y)
 
 def main():
