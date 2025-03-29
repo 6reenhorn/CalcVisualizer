@@ -1,9 +1,8 @@
 from calcvisualizer.ui.app import GraphingApp
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QVBoxLayout, QFrame
 from PyQt6.QtGui import QMovie
 from PyQt6.QtCore import Qt, QTimer
 import sys
-import time
 from assets.assets import LOADING_ICON
 
 class LoadingScreen(QWidget):
@@ -14,29 +13,42 @@ class LoadingScreen(QWidget):
         # Remove window title and frame
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         
-        self.setStyleSheet("""
-            background-color: white;
-            color: black;
+        # Enable transparency for the window
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        
+        # Create a frame for the content with rounded corners
+        self.frame = QFrame(self)
+        self.frame.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 10px;
+                color: black;
+            }
         """)
-
-        # Create layout
-        layout = QVBoxLayout(self)
+        
+        # Setup the main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self.frame)
+        
+        # Create frame layout
+        frame_layout = QVBoxLayout(self.frame)
+        frame_layout.setSpacing(15)
         
         # Create label for GIF
-        self.label = QLabel(self)
+        self.label = QLabel()
         self.movie = QMovie(LOADING_ICON)  
         self.label.setMovie(self.movie)
         self.movie.start()
         
         # Add loading text
-        self.loading_text = QLabel("Loading application...", self)
+        self.loading_text = QLabel("Loading application...")
         self.loading_text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         self.loading_text.setStyleSheet("font-size: 14px; font-weight: bold;")
         
         # Add widgets to layout
-        layout.addWidget(self.label, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.loading_text, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.setLayout(layout)
+        frame_layout.addWidget(self.label, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter)
+        frame_layout.addWidget(self.loading_text, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
         
         self.center_on_screen()
     
