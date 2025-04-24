@@ -12,6 +12,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from calcvisualizer.ui.canvas import MplCanvas
 from assets.assets import WINDOW_ICON
 
@@ -606,6 +607,12 @@ class GraphingApp(QMainWindow):
         # Initialize with empty plots and show empty graph in Entire View
         self.initialize_plots()
         self.create_dynamic_canvases([], force_empty=True)  
+
+        # Add Navigation Toolbar for zooming and panning
+        self.add_navigation_toolbar(self.combined_canvas)
+        self.add_navigation_toolbar(self.analysis_canvas)
+        self.add_navigation_toolbar(self.combined_small_canvas)
+        self.add_navigation_toolbar(self.analysis_small_canvas)
         
     def toggle_y_scale_controls(self, checked):
         """Enable/disable Y scale controls based on auto-scale checkbox"""
@@ -619,17 +626,8 @@ class GraphingApp(QMainWindow):
     
     def initialize_plots(self):
         """Initialize empty plots with grids and labels"""
-        # Only initialize canvases that exist
         canvases = [self.combined_canvas, self.analysis_canvas, 
                     self.combined_small_canvas, self.analysis_small_canvas]
-        
-        # Add individual canvases if they exist
-        if self.canvas1:
-            canvases.append(self.canvas1)
-        if self.canvas2:
-            canvases.append(self.canvas2)
-        if self.canvas3:
-            canvases.append(self.canvas3)
         
         for canvas in canvases:
             if canvas:  # Check if canvas exists
@@ -637,7 +635,29 @@ class GraphingApp(QMainWindow):
                 canvas.axes.grid(True, linestyle='--', alpha=0.7)
                 canvas.axes.set_xlabel('x')
                 canvas.axes.set_ylabel('y')
+                canvas.axes.autoscale(enable=True, axis='y')  # Enable dynamic Y-axis scaling
                 canvas.draw()
+    
+    def add_navigation_toolbar(self, canvas):
+        """Add a navigation toolbar for zooming and panning to a canvas."""
+        toolbar = NavigationToolbar2QT(canvas, self)
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #2e2e2e;
+                border: none;
+            }
+            QToolButton {
+                color: white;
+                background-color: #3e3e3e;
+                border: none;
+                padding: 4px;
+            }
+            QToolButton:hover {
+                background-color: #4a94ff;
+            }
+        """)
+        canvas_layout = canvas.parent().layout()
+        canvas_layout.addWidget(toolbar)
     
     def create_dynamic_canvases(self, expressions, force_empty=False):
         """Create canvases dynamically based on the number of functions"""
@@ -914,6 +934,7 @@ class GraphingApp(QMainWindow):
             if canvas:  # Check if canvas exists
                 canvas.axes.clear()
                 canvas.axes.grid(self.grid_lines.isChecked(), linestyle='--', alpha=0.7)
+                canvas.axes.autoscale(enable=True, axis='y')  # Enable dynamic Y-axis scaling
                 self.set_y_scale(canvas.axes)
                 self.apply_plot_theme(canvas.axes)
         
