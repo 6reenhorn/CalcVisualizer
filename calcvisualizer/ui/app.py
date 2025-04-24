@@ -613,6 +613,14 @@ class GraphingApp(QMainWindow):
         self.add_navigation_toolbar(self.analysis_canvas)
         self.add_navigation_toolbar(self.combined_small_canvas)
         self.add_navigation_toolbar(self.analysis_small_canvas)
+
+        # Add Navigation Toolbar for individual graphs
+        if self.canvas1:
+            self.add_navigation_toolbar(self.canvas1)
+        if self.canvas2:
+            self.add_navigation_toolbar(self.canvas2)
+        if self.canvas3:
+            self.add_navigation_toolbar(self.canvas3)
         
     def toggle_y_scale_controls(self, checked):
         """Enable/disable Y scale controls based on auto-scale checkbox"""
@@ -627,8 +635,9 @@ class GraphingApp(QMainWindow):
     def initialize_plots(self):
         """Initialize empty plots with grids and labels"""
         canvases = [self.combined_canvas, self.analysis_canvas, 
-                    self.combined_small_canvas, self.analysis_small_canvas]
-        
+                    self.combined_small_canvas, self.analysis_small_canvas,
+                    self.canvas1, self.canvas2, self.canvas3]
+
         for canvas in canvases:
             if canvas:  # Check if canvas exists
                 canvas.axes.clear()
@@ -920,16 +929,9 @@ class GraphingApp(QMainWindow):
         
         # Clear all canvases and apply theme
         canvases = [self.combined_canvas, self.analysis_canvas, 
-                    self.combined_small_canvas, self.analysis_small_canvas]
-        
-        # Add individual canvases if they exist
-        if self.canvas1:
-            canvases.append(self.canvas1)
-        if self.canvas2:
-            canvases.append(self.canvas2)
-        if self.canvas3:
-            canvases.append(self.canvas3)
-        
+                    self.combined_small_canvas, self.analysis_small_canvas,
+                    self.canvas1, self.canvas2, self.canvas3]
+
         for canvas in canvases:
             if canvas:  # Check if canvas exists
                 canvas.axes.clear()
@@ -1181,16 +1183,9 @@ class GraphingApp(QMainWindow):
         
         # Clear all canvases and apply theme
         canvases = [self.combined_canvas, self.analysis_canvas, 
-                    self.combined_small_canvas, self.analysis_small_canvas]
-        
-        # Add individual canvases if they exist
-        if self.canvas1:
-            canvases.append(self.canvas1)
-        if self.canvas2:
-            canvases.append(self.canvas2)
-        if self.canvas3:
-            canvases.append(self.canvas3)
-        
+                    self.combined_small_canvas, self.analysis_small_canvas,
+                    self.canvas1, self.canvas2, self.canvas3]
+
         for canvas in canvases:
             if canvas:  # Check if canvas exists
                 canvas.axes.clear()
@@ -1676,6 +1671,25 @@ class GraphingApp(QMainWindow):
             canvas = MplCanvas(width=8, height=6, dpi=100)
             canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             canvas_frame_layout.addWidget(canvas)
+
+            # Add navigation toolbar for zoom/pan functionality
+            toolbar = NavigationToolbar2QT(canvas, self)
+            toolbar.setStyleSheet("""
+                QToolBar {
+                    background-color: #2e2e2e;
+                    border: none;
+                }
+                QToolButton {
+                    color: white;
+                    background-color: #3e3e3e;
+                    border: none;
+                    padding: 4px;
+                }
+                QToolButton:hover {
+                    background-color: #4a94ff;
+                }
+            """)
+            canvas_frame_layout.addWidget(toolbar)
 
             # Store canvas reference
             if i == 0:
