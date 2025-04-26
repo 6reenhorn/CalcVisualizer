@@ -1,0 +1,7 @@
+# Ignore build and dist folders
+/dist/
+/build/
+/*.spec
+
+# If you also don't want to push virtual environment
+/env/
