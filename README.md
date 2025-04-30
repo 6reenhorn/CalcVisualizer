@@ -84,12 +84,12 @@ This project is for educational purposes and is open for further improvements.
 - _Nu1L
   - Main Developer
 - Kie 
-  - Moral Support
+  - Quality Assurance
 - DnJstr
-  - Laugher
+  - Developer
 - piaamarie
-  - [`Princess`, `Cutie`, `Pretty`, `Smart`]
+  - [`Princess`, `Cutie`, `Pretty`, `Smart`, `Designer`]
 - Lorenz
-  - Kuya
+  - Quality Assurance
 - Jaybird
-  - 2nd Kuya
+  - Developer
