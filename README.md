@@ -83,12 +83,12 @@ This project is for educational purposes and is open for further improvements.
 ## Contributors
 - _Nu1L
   - Main Developer
-- Kie
+- Kie 
   - Moral Support
 - DnJstr
   - Laugher
 - piaamarie
-  -[`Princess`, `Cutie`, `Pretty`, `Smart`]
+  - [`Princess`, `Cutie`, `Pretty`, `Smart`]
 - Lorenz
   - Kuya
 - Jaybird
